@@ -415,6 +415,15 @@ export function VideosAppComponent({
   };
 
   const handleOverlayPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    // Check if click is on SeekBar area - if so, don't toggle play/pause
+    const target = e.target as HTMLElement;
+    const isSeekBarClick = target.closest('[data-seekbar]') !== null;
+    
+    if (isSeekBarClick) {
+      // Let SeekBar handle the interaction
+      return;
+    }
+
     if (e.pointerType === "touch") {
       // Prevent the synthetic mouse click that usually follows a touch so we don't double-trigger.
       e.preventDefault();
@@ -426,10 +435,8 @@ export function VideosAppComponent({
       if (!wasSwipe) {
         // Treat as tap -> toggle play/pause
         togglePlay();
-      } else {
-        // Swipe: just show seekbar (already shown); do not toggle play/pause
-        // No-op here.
       }
+      // Swipe: just show seekbar (already shown); do not toggle play/pause
       return;
     }
 
@@ -484,6 +491,51 @@ export function VideosAppComponent({
       safeSetCurrentVideoId(videos[0].id);
     }
   }, [videos, currentVideoId, safeSetCurrentVideoId]);
+
+  // Ensure YouTube iframe doesn't intercept clicks when playing
+  useEffect(() => {
+    if (!playerRef.current) return;
+
+    const updateIframePointerEvents = () => {
+      // Find all iframes within the ReactPlayer container
+      const iframes = document.querySelectorAll('.react-player iframe');
+      iframes.forEach((iframe) => {
+        if (iframe instanceof HTMLIFrameElement) {
+          if (isPlaying) {
+            iframe.style.pointerEvents = 'none';
+            iframe.style.zIndex = '-1';
+          } else {
+            iframe.style.pointerEvents = 'auto';
+            iframe.style.zIndex = 'auto';
+          }
+        }
+      });
+    };
+
+    // Update immediately
+    updateIframePointerEvents();
+
+    // Also update after a short delay to catch dynamically loaded iframes
+    const timeoutId = setTimeout(updateIframePointerEvents, 100);
+    const timeoutId2 = setTimeout(updateIframePointerEvents, 500);
+
+    // Set up observer to watch for iframe changes
+    const observer = new MutationObserver(() => {
+      updateIframePointerEvents();
+    });
+    
+    // Observe the document body for iframe additions
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+    });
+
+    return () => {
+      clearTimeout(timeoutId);
+      clearTimeout(timeoutId2);
+      observer.disconnect();
+    };
+  }, [isPlaying]);
 
   // Function to show status message
   const showStatus = (message: string) => {
@@ -862,8 +914,11 @@ export function VideosAppComponent({
   }, [processVideoId, bringToForeground]);
 
   const togglePlay = () => {
+    // Optimistic update: update state immediately for better UX
+    const newIsPlaying = !isPlaying;
+    setIsPlaying(newIsPlaying);
     togglePlayStore();
-    showStatus(!isPlaying ? "PLAY ▶" : "PAUSED ⏸");
+    showStatus(newIsPlaying ? "PLAY ▶" : "PAUSED ⏸");
     playVideoTape();
   };
 
@@ -1037,66 +1092,123 @@ export function VideosAppComponent({
                 onMouseLeave={() => setIsVideoHovered(false)}
               >
                 <div className="w-full h-[calc(100%+120px)] mt-[-60px] relative">
-                  <ReactPlayer
-                    ref={playerRef}
-                    url={getCurrentVideo()?.url || ""}
-                    playing={isPlaying}
-                    controls={false}
-                    width="100%"
-                    height="100%"
-                    onEnded={handleVideoEnd}
-                    onProgress={handleProgress}
-                    onDuration={handleDuration}
-                    onPlay={handlePlay}
-                    onPause={handlePause}
-                    onReady={handleReady}
-                    loop={loopCurrent}
-                    playsinline
-                    config={{
-                      youtube: {
-                        playerVars: {
-                          modestbranding: 1,
-                          rel: 0,
-                          showinfo: 0,
-                          iv_load_policy: 3,
-                          fs: 0,
-                          disablekb: 1,
-                          playsinline: 1,
-                          autoplay: 0,
-                        },
-                      },
-                    }}
-                  />
-                  {/* White noise effect (z-10) */}
-                  <AnimatePresence>
-                    {!isPlaying && (
-                      <motion.div
-                        initial={{ opacity: 0, scale: 1.15 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 1.15 }}
-                        transition={{
-                          duration: 0.2,
-                          delay: 0.1,
-                          ease: [0.4, 0, 0.2, 1],
+                  <div className="relative w-full h-full">
+                    <div
+                      style={{
+                        pointerEvents: isPlaying ? 'none' : 'auto',
+                        width: '100%',
+                        height: '100%',
+                      }}
+                    >
+                      <ReactPlayer
+                        ref={playerRef}
+                        url={getCurrentVideo()?.url || ""}
+                        playing={isPlaying}
+                        controls={false}
+                        width="100%"
+                        height="100%"
+                        onEnded={handleVideoEnd}
+                        onProgress={handleProgress}
+                        onDuration={handleDuration}
+                        onPlay={handlePlay}
+                        onPause={handlePause}
+                        onReady={handleReady}
+                        loop={loopCurrent}
+                        playsinline
+                        config={{
+                          youtube: {
+                            playerVars: {
+                              modestbranding: 1,
+                              rel: 0,
+                              showinfo: 0,
+                              iv_load_policy: 3,
+                              fs: 0,
+                              disablekb: 1,
+                              playsinline: 1,
+                              autoplay: 0,
+                            },
+                          },
                         }}
-                        className="absolute inset-0 z-10"
-                      >
-                        <WhiteNoiseEffect />
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                  {/* Pointer-interaction overlay for play/pause + swipe-to-show-seekbar (z-20) */}
-                  <div
-                    className="absolute inset-0 cursor-pointer z-20"
-                    aria-label={isPlaying ? "Pause" : "Play"}
-                    onPointerDown={handleOverlayPointerDown}
-                    onPointerMove={handleOverlayPointerMove}
-                    onPointerUp={handleOverlayPointerUp}
-                    onPointerCancel={handleOverlayPointerCancel}
-                  />
+                        style={{
+                          pointerEvents: isPlaying ? 'none' : 'auto',
+                        }}
+                      />
+                      {/* Additional CSS to ensure iframe doesn't intercept events when playing */}
+                      {isPlaying && (
+                        <style>{`
+                          .react-player iframe {
+                            pointer-events: none !important;
+                          }
+                        `}</style>
+                      )}
+                    </div>
+                    {/* White noise effect (z-10) */}
+                    <AnimatePresence>
+                      {!isPlaying && (
+                        <motion.div
+                          initial={{ opacity: 0, scale: 1.15 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 1.15 }}
+                          transition={{
+                            duration: 0.2,
+                            delay: 0.1,
+                            ease: [0.4, 0, 0.2, 1],
+                          }}
+                          className="absolute inset-0 z-10"
+                        >
+                          <WhiteNoiseEffect />
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
                 </div>
+                {/* Pointer-interaction overlay for play/pause + swipe-to-show-seekbar (z-20) */}
+                {/* This overlay covers the ENTIRE video container area and handles clicks for play/pause */}
+                {/* When playing, this overlay intercepts all clicks to allow pause functionality */}
+                {/* Positioned at the outer container level to ensure full coverage */}
+                <motion.div
+                  className="absolute inset-0 cursor-pointer z-20"
+                  aria-label={isPlaying ? "Pause" : "Play"}
+                  onPointerDown={handleOverlayPointerDown}
+                  onPointerMove={handleOverlayPointerMove}
+                  onPointerUp={handleOverlayPointerUp}
+                  onPointerCancel={handleOverlayPointerCancel}
+                  onClick={(e) => {
+                    // Ensure clicks work even when video is playing
+                    const target = e.target as HTMLElement;
+                    const isSeekBarClick = target.closest('[data-seekbar]') !== null;
+                    if (!isSeekBarClick) {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      togglePlay();
+                    }
+                  }}
+                  onMouseDown={(e) => {
+                    // Prevent YouTube iframe from capturing mouse events when playing
+                    const target = e.target as HTMLElement;
+                    const isSeekBarClick = target.closest('[data-seekbar]') !== null;
+                    if (isPlaying && !isSeekBarClick) {
+                      e.preventDefault();
+                      e.stopPropagation();
+                    }
+                  }}
+                  onTouchStart={(e) => {
+                    // Handle touch events for mobile
+                    const target = e.target as HTMLElement;
+                    const isSeekBarClick = target.closest('[data-seekbar]') !== null;
+                    if (isPlaying && !isSeekBarClick) {
+                      e.stopPropagation();
+                    }
+                  }}
+                  whileTap={{ opacity: 0.9 }}
+                  transition={{ duration: 0.1 }}
+                  style={{ 
+                    pointerEvents: 'auto',
+                    zIndex: 20,
+                  }}
+                />
                 {/* SeekBar positioned at the bottom (z-30) - moved outside oversized container */}
-                <div className="absolute bottom-0 left-0 right-0 z-30">
+                <div className="absolute bottom-0 left-0 right-0 z-30" data-seekbar>
                   <SeekBar
                     duration={duration}
                     currentTime={playedSeconds}
@@ -1224,9 +1336,23 @@ export function VideosAppComponent({
                       onClick={togglePlay}
                       variant="aqua_select"
                       disabled={videos.length === 0}
-                      className="aqua-compact-wide font-chicago"
+                      className="aqua-compact-wide font-chicago relative overflow-hidden"
                     >
-                      <span className="translate-y-[2px] inline-block">{isPlaying ? "⏸" : "▶"}</span>
+                      <AnimatePresence mode="wait" initial={false}>
+                        <motion.span
+                          key={isPlaying ? "pause" : "play"}
+                          className="translate-y-[2px] inline-block"
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.8 }}
+                          transition={{
+                            duration: 0.15,
+                            ease: [0.4, 0, 0.2, 1],
+                          }}
+                        >
+                          {isPlaying ? "⏸" : "▶"}
+                        </motion.span>
+                      </AnimatePresence>
                     </Button>
                     <Button
                       onClick={nextVideo}
@@ -1258,22 +1384,35 @@ export function VideosAppComponent({
                     <button
                       onClick={togglePlay}
                       className={cn(
-                        "flex items-center justify-center disabled:opacity-50 focus:outline-none",
-                        "hover:brightness-75 active:brightness-50"
+                        "flex items-center justify-center disabled:opacity-50 focus:outline-none relative",
+                        "hover:brightness-75 active:brightness-50 transition-all duration-150",
+                        "active:scale-95"
                       )}
                       disabled={videos.length === 0}
                     >
-                      <img
-                        src={
-                          isPlaying
-                            ? "/assets/videos/pause.png"
-                            : "/assets/videos/play.png"
-                        }
-                        alt={isPlaying ? "Pause" : "Play"}
-                        width={50}
-                        height={22}
-                        className="pointer-events-none"
-                      />
+                      <div className="relative w-[50px] h-[22px] flex items-center justify-center">
+                        <AnimatePresence mode="wait" initial={false}>
+                          <motion.img
+                            key={isPlaying ? "pause" : "play"}
+                            src={
+                              isPlaying
+                                ? "/assets/videos/pause.png"
+                                : "/assets/videos/play.png"
+                            }
+                            alt={isPlaying ? "Pause" : "Play"}
+                            width={50}
+                            height={22}
+                            className="pointer-events-none"
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.8 }}
+                            transition={{
+                              duration: 0.15,
+                              ease: [0.4, 0, 0.2, 1],
+                            }}
+                          />
+                        </AnimatePresence>
+                      </div>
                     </button>
                     <button
                       onClick={nextVideo}

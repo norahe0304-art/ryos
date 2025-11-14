@@ -125,6 +125,7 @@ export function SeekBar({
   // Handle mouse down on seek bar
   const handleMouseDown = (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent click from reaching the play/pause overlay
+    e.preventDefault(); // Prevent default behavior
     setIsDragging(true);
     showSeekBar();
     const position = calculatePosition(e.clientX);
@@ -157,7 +158,7 @@ export function SeekBar({
   // Touch event handlers
   const handleTouchStart = (e: React.TouchEvent) => {
     e.preventDefault(); // Prevent default touch behavior
-    e.stopPropagation();
+    e.stopPropagation(); // Prevent event from bubbling to play/pause overlay
     setIsDragging(true);
     showSeekBar();
     const touch = e.touches[0];
@@ -250,11 +251,21 @@ export function SeekBar({
           startAutoDismissTimer();
         }
       }}
+      onClick={(e) => {
+        // Allow clicks on the background gradient to pass through to play/pause overlay
+        // Only the actual seek bar element will stop propagation
+        const target = e.target as HTMLElement;
+        if (!target.closest('[data-seekbar]')) {
+          // This is a click on the gradient background, let it pass through
+          return;
+        }
+      }}
     >
-      <div className="absolute bottom-0 left-0 right-0 px-4 py-3">
+      <div className="absolute bottom-0 left-0 right-0 px-4 py-3" data-seekbar>
         {/* Seek bar */}
         <div
           ref={seekBarRef}
+          data-seekbar
           className={`relative h-[8px] rounded-full cursor-pointer pointer-events-auto overflow-hidden transition-all duration-150 ${
             isDragging
               ? "border border-white/80 bg-white/25"
@@ -265,6 +276,10 @@ export function SeekBar({
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
+          onClick={(e) => {
+            // Prevent click from bubbling to play/pause overlay
+            e.stopPropagation();
+          }}
           style={{
             touchAction: "none", // Prevent default touch behaviors
           }}

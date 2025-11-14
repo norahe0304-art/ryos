@@ -72,24 +72,24 @@ function BatteryIndicator({ backlightOn }: { backlightOn: boolean }) {
   return (
     <div className="flex items-center">
       {/* Battery outline */}
-      <div className="relative w-[19px] h-[10px] border border-[#0a3667] bg-transparent">
+      <div className="relative w-[19px] h-[10px] border border-[#806c6a] bg-transparent">
         {/* Battery bars */}
         <div className="absolute inset-[1px] flex gap-[1px]">
           {[1, 2, 3, 4].map((bar) => (
             <div
               key={bar}
               className={`flex-1 h-full transition-colors duration-200 ${
-                bar <= filledBars ? "bg-[#0a3667]" : "bg-transparent"
+                bar <= filledBars ? "bg-[#806c6a]" : "bg-transparent"
               }`}
             />
           ))}
         </div>
       </div>
       {/* Battery tip */}
-      <div className="w-[2px] h-[4px] bg-[#0a3667] relative">
+      <div className="w-[2px] h-[4px] bg-[#806c6a] relative">
         <div
           className={`w-[2px] h-[2px] absolute top-[1px] left-[-2px] right-[0px] mx-auto ${
-            backlightOn ? "bg-[#c5e0f5]" : "bg-[#8a9da9]"
+            backlightOn ? "bg-[#f5f0ed]" : "bg-[#d4c9c5]"
           }`}
         />
       </div>
@@ -167,17 +167,17 @@ function Scrollbar({
       <div
         ref={trackRef}
         className={cn(
-          "w-full h-full border border-[#0a3667] transition-all duration-500",
+          "w-full h-full border border-[#806c6a] transition-all duration-500",
           backlightOn
-            ? "bg-[#c5e0f5] bg-gradient-to-b from-[#d1e8fa] to-[#e0f0fc]"
-            : "bg-[#8a9da9]"
+            ? "bg-[#f5f0ed] bg-gradient-to-b from-[#faf5f2] to-[#f0ebe8]"
+            : "bg-[#d4c9c5]"
         )}
         style={{ opacity: 0 }}
       />
       {/* Thumb - visibility controlled by JS */}
       <div
         ref={thumbRef}
-        className="absolute right-0 bg-[#0a3667]"
+        className="absolute right-0 bg-[#806c6a]"
         style={{
           marginLeft: "2px",
           marginRight: "2px",
@@ -213,9 +213,9 @@ function MenuListItem({
         showChevron || value ? "pr-4" : "pr-2", // Always use extra padding for items with chevron or value
         isSelected
           ? backlightOn
-            ? "bg-[#0a3667] text-[#c5e0f5] [text-shadow:1px_1px_0_rgba(0,0,0,0.15)]"
-            : "bg-[#0a3667] text-[#8a9da9] [text-shadow:1px_1px_0_rgba(0,0,0,0.15)]"
-          : "text-[#0a3667] hover:bg-[#c0d8f0] [text-shadow:1px_1px_0_rgba(0,0,0,0.15)]"
+            ? "bg-[#806c6a] text-[#f5f0ed] [text-shadow:1px_1px_0_rgba(0,0,0,0.15)]"
+            : "bg-[#806c6a] text-[#d4c9c5] [text-shadow:1px_1px_0_rgba(0,0,0,0.15)]"
+          : "text-[#806c6a] hover:bg-[#e8ddd9] [text-shadow:1px_1px_0_rgba(0,0,0,0.15)]"
       )}
     >
       <span className="whitespace-nowrap overflow-hidden text-ellipsis flex-1 mr-2">
@@ -359,6 +359,7 @@ interface IpodScreenProps {
   loopCurrent: boolean;
   statusMessage: string | null;
   onToggleVideo: () => void;
+  togglePlay: () => void;
   lcdFilterOn: boolean;
   ipodVolume: number;
   showStatusCallback: (message: string) => void;
@@ -399,6 +400,7 @@ export function IpodScreen({
   loopCurrent,
   statusMessage,
   onToggleVideo,
+  togglePlay,
   lcdFilterOn,
   ipodVolume,
   showStatusCallback,
@@ -552,12 +554,12 @@ export function IpodScreen({
         "relative w-full h-[150px] border border-black border-2 rounded-[2px] overflow-hidden transition-all duration-500 select-none",
         lcdFilterOn ? "lcd-screen" : "",
         backlightOn
-          ? "bg-[#c5e0f5] bg-gradient-to-b from-[#d1e8fa] to-[#e0f0fc]"
-          : "bg-[#8a9da9] contrast-65 saturate-50",
-        // Add the soft blue glow when both LCD filter and backlight are on
+          ? "bg-[#f5f0ed] bg-gradient-to-b from-[#faf5f2] to-[#f0ebe8]"
+          : "bg-[#d4c9c5] contrast-65 saturate-50",
+        // Add the soft glow when both LCD filter and backlight are on
         lcdFilterOn &&
           backlightOn &&
-          "shadow-[0_0_10px_2px_rgba(197,224,245,0.05)]"
+          "shadow-[0_0_10px_2px_rgba(245,240,237,0.05)]"
       )}
       style={{
         minWidth: '100%',
@@ -589,30 +591,7 @@ export function IpodScreen({
               : "opacity-100"
           )}
         >
-          <div
-            className="w-full h-[calc(100%+120px)] mt-[-60px]"
-            onClick={(e) => {
-              // Ensure taps on the lyrics overlay also toggle play / video as expected
-              e.stopPropagation();
-              registerActivity();
-              if (!isPlaying) {
-                // When not playing, show video and resume playback
-                if (!showVideo) {
-                  onToggleVideo();
-                  // Give React a moment to render the player before playing
-                  setTimeout(() => {
-                    handlePlay();
-                  }, 100);
-                } else {
-                  // Video already visible; just resume playback
-                  handlePlay();
-                }
-              } else {
-                // Playing → hide video
-                onToggleVideo();
-              }
-            }}
-          >
+          <div className="w-full h-[calc(100%+120px)] mt-[-60px] relative">
             <ReactPlayer
               ref={playerRef}
               url={currentTrack.url}
@@ -645,22 +624,7 @@ export function IpodScreen({
             />
             {/* Dark overlay when lyrics are shown */}
             {showVideo && shouldShowLyrics && (
-              <div className="absolute inset-0 bg-black/30 z-25" />
-            )}
-            {/* Transparent overlay to capture clicks */}
-            {showVideo && (
-              <div
-                className="absolute inset-0 z-30"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  // Only resume playback; keep video visible
-                  if (!isPlaying) {
-                    handlePlay();
-                  } else {
-                    onToggleVideo();
-                  }
-                }}
-              />
+              <div className="absolute inset-0 bg-black/30 z-25 pointer-events-none" />
             )}
             {/* Status Display */}
             <AnimatePresence>
@@ -706,16 +670,32 @@ export function IpodScreen({
       )}
 
       {/* Title bar - not animated, immediately swaps */}
-      <div className="border-b border-[#0a3667] py-0 px-2 font-chicago text-[16px] flex items-center sticky top-0 z-10 text-[#0a3667] [text-shadow:1px_1px_0_rgba(0,0,0,0.15)]">
-        <div
-          className={`w-6 flex items-center justify-start font-chicago ${
+      <div className="border-b border-[#806c6a] py-0 px-2 font-chicago text-[16px] flex items-center sticky top-0 z-10 text-[#806c6a] [text-shadow:1px_1px_0_rgba(0,0,0,0.15)]">
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            togglePlay();
+          }}
+          className={cn(
+            "w-6 flex items-center justify-start font-chicago transition-all duration-150",
+            "hover:opacity-70 hover:scale-110 active:opacity-50 active:scale-95 cursor-pointer",
+            "focus:outline-none focus:ring-1 focus:ring-[#806c6a] focus:ring-offset-1 rounded",
+            "touch-manipulation", // Optimize for touch devices
             isPlaying ? "text-xs" : "text-[18px]"
-          }`}
+          )}
+          aria-label={isPlaying ? "Pause" : "Play"}
+          title={isPlaying ? "Pause" : "Play"}
         >
-          <div className="w-4 h-4 mt-0.5 flex items-center justify-center">
+          <motion.div
+            className="w-4 h-4 mt-0.5 flex items-center justify-center"
+            animate={{ scale: 1 }}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            transition={{ duration: 0.15 }}
+          >
             {isPlaying ? "▶" : "⏸︎"}
-          </div>
-        </div>
+          </motion.div>
+        </button>
         <div className="flex-1 truncate text-center">{currentMenuTitle}</div>
         <div className="w-6 flex items-center justify-end">
           <BatteryIndicator backlightOn={backlightOn} />
@@ -815,10 +795,10 @@ export function IpodScreen({
               <div className="flex-1 flex flex-col p-1 px-2 overflow-auto">
                 {currentTrack ? (
                   <>
-                    <div className="font-chicago text-[12px] mb-1 text-[#0a3667] [text-shadow:1px_1px_0_rgba(0,0,0,0.15)]">
+                    <div className="font-chicago text-[12px] mb-1 text-[#806c6a] [text-shadow:1px_1px_0_rgba(0,0,0,0.15)]">
                       {currentIndex + 1} of {tracksLength}
                     </div>
-                    <div className="font-chicago text-[16px] text-center text-[#0a3667] [text-shadow:1px_1px_0_rgba(0,0,0,0.15)]">
+                    <div className="font-chicago text-[16px] text-center text-[#806c6a] [text-shadow:1px_1px_0_rgba(0,0,0,0.15)]">
                       <ScrollingText
                         text={currentTrack.title}
                         isPlaying={isPlaying}
@@ -828,9 +808,9 @@ export function IpodScreen({
                         isPlaying={isPlaying}
                       />
                     </div>
-                    <div className="mt-auto w-full h-[8px] rounded-full border border-[#0a3667] overflow-hidden">
+                    <div className="mt-auto w-full h-[8px] rounded-full border border-[#806c6a] overflow-hidden">
                       <div
-                        className="h-full bg-[#0a3667]"
+                        className="h-full bg-[#806c6a]"
                         style={{
                           width: `${
                             totalTime > 0 ? (elapsedTime / totalTime) * 100 : 0
@@ -838,7 +818,7 @@ export function IpodScreen({
                         }}
                       />
                     </div>
-                    <div className="font-chicago text-[16px] w-full h-[22px] flex justify-between text-[#0a3667] [text-shadow:1px_1px_0_rgba(0,0,0,0.15)]">
+                    <div className="font-chicago text-[16px] w-full h-[22px] flex justify-between text-[#806c6a] [text-shadow:1px_1px_0_rgba(0,0,0,0.15)]">
                       <span>
                         {Math.floor(elapsedTime / 60)}:
                         {String(Math.floor(elapsedTime % 60)).padStart(2, "0")}
@@ -852,7 +832,7 @@ export function IpodScreen({
                     </div>
                   </>
                 ) : (
-                  <div className="text-center font-geneva-12 text-[12px] text-[#0a3667] [text-shadow:1px_1px_0_rgba(0,0,0,0.15)] h-full flex flex-col justify-center items-center">
+                  <div className="text-center font-geneva-12 text-[12px] text-[#806c6a] [text-shadow:1px_1px_0_rgba(0,0,0,0.15)] h-full flex flex-col justify-center items-center">
                     <p>Don't steal music</p>
                     <p>Ne volez pas la musique</p>
                     <p>Bitte keine Musik stehlen</p>

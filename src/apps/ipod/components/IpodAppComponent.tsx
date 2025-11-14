@@ -2323,7 +2323,7 @@ export function IpodAppComponent({
       >
         <div
           ref={containerRef}
-          className="ipod-force-font flex flex-col items-center justify-center w-full h-full bg-gradient-to-b from-gray-100/20 to-gray-300/20 backdrop-blur-lg p-4 select-none"
+          className="ipod-force-font flex flex-col items-center justify-center w-full h-full bg-gradient-to-b from-pink-900/20 to-rose-900/30 backdrop-blur-xl p-4 select-none"
           style={{
             position: "relative",
             overflow: "hidden",
@@ -2332,8 +2332,11 @@ export function IpodAppComponent({
         >
           <div
             className={cn(
-              "ipod-force-font w-[250px] h-[400px] rounded-2xl shadow-xl border border-black/40 flex flex-col items-center p-4 pb-8",
-              theme === "classic" ? "bg-white/85" : "bg-black/85"
+              "ipod-force-font w-[250px] h-[400px] rounded-2xl shadow-2xl flex flex-col items-center p-4 pb-8",
+              "backdrop-blur-xl border border-pink-200/20",
+              "relative overflow-hidden",
+              "before:content-[''] before:absolute before:inset-0 before:rounded-2xl before:bg-gradient-to-br before:from-white/20 before:via-transparent before:to-transparent before:pointer-events-none",
+              "after:content-[''] after:absolute after:inset-0 after:rounded-2xl after:bg-gradient-to-t after:from-pink-900/30 after:via-transparent after:to-transparent after:pointer-events-none"
             )}
             style={{
               transform: `scale(${scale})`,
@@ -2346,6 +2349,8 @@ export function IpodAppComponent({
               contain: "layout style paint",
               willChange: "transform",
               backfaceVisibility: "hidden",
+              background: "linear-gradient(135deg, rgba(255, 182, 193, 0.85) 0%, rgba(255, 192, 203, 0.9) 50%, rgba(255, 182, 193, 0.85) 100%)",
+              boxShadow: "0 20px 60px rgba(255, 182, 193, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.3)",
             }}
           >
             <IpodScreen
@@ -2373,6 +2378,7 @@ export function IpodAppComponent({
               loopCurrent={loopCurrent}
               statusMessage={statusMessage}
               onToggleVideo={toggleVideo}
+              togglePlay={togglePlay}
               lcdFilterOn={lcdFilterOn}
               ipodVolume={ipodVolume}
               showStatusCallback={showStatus}

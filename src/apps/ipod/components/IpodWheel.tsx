@@ -295,12 +295,18 @@ export function IpodWheel({
     <div
       className={cn(
         "mt-6 relative w-[180px] h-[180px] rounded-full flex items-center justify-center select-none",
+        "backdrop-blur-lg border border-pink-200/20",
+        "before:content-[''] before:absolute before:inset-0 before:rounded-full before:bg-gradient-to-br before:from-white/20 before:via-transparent before:to-transparent before:pointer-events-none",
         theme === "classic"
-          ? "bg-gray-300/60"
+          ? ""
           : theme === "u2"
           ? "bg-red-700/60"
-          : "bg-neutral-800/50"
+          : ""
       )}
+      style={{
+        background: "linear-gradient(135deg, rgba(255, 182, 193, 0.75) 0%, rgba(255, 192, 203, 0.8) 50%, rgba(255, 182, 193, 0.75) 100%)",
+        boxShadow: "0 8px 32px rgba(255, 182, 193, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.25)",
+      }}
     >
       {/* Center control changed from <button> to <div role="button"> to avoid global XP/98 button styles overriding radius/background */}
       <div
@@ -319,14 +325,25 @@ export function IpodWheel({
           }
         }}
         className={cn(
-          "ipod-wheel-center absolute w-16 h-16 rounded-full z-10 flex items-center justify-center outline-none focus:outline-none focus-visible:outline-none",
+          "ipod-wheel-center absolute w-16 h-16 rounded-full z-10 flex items-center justify-center outline-none focus:outline-none focus-visible:outline-none overflow-hidden",
+          "backdrop-blur-md border border-pink-200/20",
           theme === "classic"
-            ? "bg-white/30"
+            ? ""
             : theme === "u2"
             ? "bg-black/70"
-            : "bg-black/30"
+            : ""
         )}
-      />
+        style={{
+          background: "linear-gradient(135deg, rgba(255, 182, 193, 0.6) 0%, rgba(255, 192, 203, 0.65) 50%, rgba(255, 182, 193, 0.6) 100%)",
+          boxShadow: "0 4px 16px rgba(255, 182, 193, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.3)",
+        }}
+      >
+        <img
+          src="/assets/按钮贴图.png"
+          alt=""
+          className="w-full h-full object-cover"
+        />
+      </div>
 
       {/* Wheel sections */}
       <div
