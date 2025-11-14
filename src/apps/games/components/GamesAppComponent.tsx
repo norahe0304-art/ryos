@@ -41,7 +41,7 @@ export function GamesAppComponent({
   const dosPropsRef = useRef<DosProps | null>(null);
   const launchApp = useLaunchApp();
   const fileStore = useFilesStore();
-  const [contextMenuGame, setContextMenuGame] = useState<Game | null>(null);
+  const [_contextMenuGame, setContextMenuGame] = useState<Game | null>(null);
   const [contextMenuPos, setContextMenuPos] = useState<{ x: number; y: number } | null>(null);
 
   const currentTheme = useThemeStore((state) => state.current);
@@ -234,57 +234,58 @@ export function GamesAppComponent({
     setIsResetDialogOpen(false);
   };
 
-  const handleAddToDesktop = (game: Game, e: React.MouseEvent) => {
-    e.stopPropagation();
-    e.preventDefault();
-    
-    // Check if shortcut already exists
-    const desktopItems = fileStore.getItemsInPath("/Desktop");
-    const existingShortcut = desktopItems.find(
-      (item) =>
-        item.aliasType === "app" &&
-        item.aliasTarget === "games" &&
-        item.status === "active" &&
-        item.name === game.name
-    );
+  // TODO: Implement add to desktop functionality
+  // const handleAddToDesktop = (game: Game, e: React.MouseEvent) => {
+  //   e.stopPropagation();
+  //   e.preventDefault();
+  //   
+  //   // Check if shortcut already exists
+  //   const desktopItems = fileStore.getItemsInPath("/Desktop");
+  //   const existingShortcut = desktopItems.find(
+  //     (item) =>
+  //       item.aliasType === "app" &&
+  //       item.aliasTarget === "games" &&
+  //       item.status === "active" &&
+  //       item.name === game.name
+  //   );
 
-    if (existingShortcut) {
-      toast.info("Desktop shortcut already exists", {
-        description: `${game.name} is already on the desktop`,
-      });
-      return;
-    }
+  //   if (existingShortcut) {
+  //     toast.info("Desktop shortcut already exists", {
+  //       description: `${game.name} is already on the desktop`,
+  //     });
+  //     return;
+  //   }
 
-    // Create a file system item for the game shortcut
-    // We'll create it as a file alias that launches the games app with the game ID
-    const gamePath = `/Applications/${game.name}`;
-    fileStore.createAlias(gamePath, game.name, "app", "games");
-    
-    // Update the shortcut to include game ID in metadata
-    const latestDesktopItems = fileStore.getItemsInPath("/Desktop");
-    const createdShortcut = latestDesktopItems.find(
-      (item) =>
-        item.aliasType === "app" &&
-        item.aliasTarget === "games" &&
-        item.status === "active" &&
-        item.name === game.name
-    );
+  //   // Create a file system item for the game shortcut
+  //   // We'll create it as a file alias that launches the games app with the game ID
+  //   const gamePath = `/Applications/${game.name}`;
+  //   fileStore.createAlias(gamePath, game.name, "app", "games");
+  //   
+  //   // Update the shortcut to include game ID in metadata
+  //   const latestDesktopItems = fileStore.getItemsInPath("/Desktop");
+  //   const createdShortcut = latestDesktopItems.find(
+  //     (item) =>
+  //       item.aliasType === "app" &&
+  //       item.aliasTarget === "games" &&
+  //       item.status === "active" &&
+  //       item.name === game.name
+  //   );
 
-    if (createdShortcut) {
-      // Store game ID in the shortcut's metadata so we can launch it directly
-      fileStore.updateItemMetadata(createdShortcut.path, {
-        appId: "games",
-        // We'll use a custom property to store the game ID
-      } as any);
-      
-      toast.success("Added to desktop", {
-        description: `Shortcut for ${game.name} created`,
-      });
-    }
+  //   if (createdShortcut) {
+  //     // Store game ID in the shortcut's metadata so we can launch it directly
+  //     fileStore.updateItemMetadata(createdShortcut.path, {
+  //       appId: "games",
+  //       // We'll use a custom property to store the game ID
+  //     } as any);
+  //     
+  //     toast.success("Added to desktop", {
+  //       description: `Shortcut for ${game.name} created`,
+  //     });
+  //   }
 
-    setContextMenuPos(null);
-    setContextMenuGame(null);
-  };
+  //   setContextMenuPos(null);
+  //   setContextMenuGame(null);
+  // };
 
   const handleGameContextMenu = (game: Game, e: React.MouseEvent) => {
     e.preventDefault();
