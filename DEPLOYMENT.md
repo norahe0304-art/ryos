@@ -75,27 +75,26 @@ PUSHER_CLUSTER=us2
 
 #### 在 Cloudflare 中：
 1. 登录 Cloudflare Dashboard
-2. 选择你的域名
+2. 选择你的域名（`nora-he.com`）
 3. 进入 "DNS" → "Records"
 4. 添加/修改以下记录：
 
-**选项 A：使用 CNAME（推荐）**
+**对于根域名 `nora-he.com`：**
 - Type: `CNAME`
-- Name: `@` 或 `os`（取决于你想用根域名还是子域名）
-- Target: `cname.vercel-dns.com`
+- Name: `@`（或留空，表示根域名）
+- Target: `cname.vercel-dns.com`（或 Vercel 在 Domains 页面显示的具体 CNAME 值）
 - Proxy status: 🟠 Proxied（橙色云朵，启用 CDN）
 
-**选项 B：使用 A 记录**
-- Type: `A`
-- Name: `@` 或 `os`
-- IPv4 address: Vercel 提供的 IP 地址（在 Vercel Domains 页面查看）
-- Proxy status: 🟠 Proxied
-
-**对于子域名（如 `www.os.ryo.lu`）：**
+**对于 `www.nora-he.com`：**
 - Type: `CNAME`
 - Name: `www`
-- Target: `cname.vercel-dns.com`
+- Target: `cname.vercel-dns.com`（或 Vercel 显示的值）
 - Proxy status: 🟠 Proxied
+
+**重要提示：**
+- 如果 Cloudflare 不允许根域名使用 CNAME（某些 DNS 提供商限制），需要使用 A 记录
+- 在 Vercel Domains 页面点击 "Invalid Configuration" → "Learn more" 查看具体的 DNS 配置要求
+- Vercel 会显示具体的 CNAME 目标值，可能不是 `cname.vercel-dns.com`，请使用 Vercel 显示的值
 
 #### 注意事项：
 - ✅ Cloudflare 的代理（Proxied）功能可以正常使用，不会影响 Vercel 部署
