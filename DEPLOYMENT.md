@@ -19,9 +19,18 @@ git push origin main
 4. 配置项目：
    - **Framework Preset**: Vite
    - **Root Directory**: `./` (默认)
-   - **Build Command**: `bun run build`
+   - **Build Command**: `npm run build` 或 `bun run build`（如果 Vercel 支持 Bun）
    - **Output Directory**: `dist`
-   - **Install Command**: `bun install`
+   - **Install Command**: `npm install` 或 `bun install`（如果 Vercel 支持 Bun）
+   
+   **注意**：如果使用 Bun 部署失败，可以尝试：
+   - 使用 `npm install` 和 `npm run build`（推荐）
+   - 或者在项目根目录创建 `.nvmrc` 文件指定 Node.js 版本（如 `18` 或 `20`）
+   - Vercel 会自动检测 `package.json` 中的 `packageManager` 字段，但可能不完全支持 Bun
+   
+   **推荐配置（如果 Bun 失败）**：
+   - **Install Command**: `npm install`
+   - **Build Command**: `npm run build`
 
 ### 3. 配置环境变量
 
