@@ -14,6 +14,8 @@ export const appIds = [
   "terminal",
   "applet-viewer",
   "control-panels",
+  "games",
+  "chat-room",
 ] as const;
 
 export type AppId = (typeof appIds)[number];

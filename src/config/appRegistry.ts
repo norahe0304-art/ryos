@@ -13,6 +13,8 @@ import { SynthApp } from "@/apps/synth";
 import { IpodApp } from "@/apps/ipod";
 import { TerminalApp } from "@/apps/terminal";
 import { AppletViewerApp } from "@/apps/applet-viewer";
+import { GamesApp } from "@/apps/games";
+import { ChatRoomApp } from "@/apps/chat-room";
 import { appIds } from "./appIds";
 import type {
   BaseApp,
@@ -156,11 +158,29 @@ export const appRegistry = {
       maxSize: { width: 365, height: 600 },
     } as WindowConstraints,
   },
+  [GamesApp.id]: {
+    ...GamesApp,
+    windowConfig: {
+      defaultSize: { width: 800, height: 600 },
+      minSize: { width: 640, height: 480 },
+    } as WindowConstraints,
+  },
+  [ChatRoomApp.id]: {
+    ...ChatRoomApp,
+    windowConfig: {
+      defaultSize: { width: 700, height: 600 },
+      minSize: { width: 500, height: 400 },
+    } as WindowConstraints,
+  },
 } as const;
 
 // Helper function to get app icon path
 export const getAppIconPath = (appId: AppId): string => {
   const app = appRegistry[appId];
+  if (!app) {
+    console.warn(`[getAppIconPath] App ${appId} not found in registry`);
+    return "/icons/default/application.png";
+  }
   if (typeof app.icon === "string") {
     return app.icon;
   }

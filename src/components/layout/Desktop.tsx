@@ -1,6 +1,6 @@
 import { AnyApp } from "@/apps/base/types";
 import { AppManagerState } from "@/apps/base/types";
-import { AppId } from "@/config/appRegistry";
+import { AppId, appRegistry } from "@/config/appRegistry";
 import { useState, useEffect, useRef } from "react";
 import { FileIcon } from "@/apps/finder/components/FileIcon";
 import { getAppIconPath } from "@/config/appRegistry";
@@ -63,7 +63,7 @@ export function Desktop({
   // Define the default order for desktop shortcuts
   const defaultShortcutOrder: AppId[] = [
     "ipod",
-    "chats",
+    "chat-room",
     "applet-viewer",
     "internet-explorer",
     "textedit",
@@ -72,6 +72,7 @@ export function Desktop({
     "paint",
     "soundboard",
     "minesweeper",
+    "games",
     "synth",
     "terminal",
     "pc",
@@ -88,7 +89,9 @@ export function Desktop({
         // Theme-conditional defaults: hide items that are marked hidden for
         // the current theme, but always show user-pinned (no hiddenOnThemes).
         (!item.hiddenOnThemes ||
-          !item.hiddenOnThemes.includes(currentTheme))
+          !item.hiddenOnThemes.includes(currentTheme)) &&
+        // Filter out shortcuts pointing to non-existent apps
+        !(item.aliasType === "app" && item.aliasTarget && !appRegistry[item.aliasTarget as AppId])
     )
     .sort((a, b) => {
       // Sort by default order if both are app aliases
@@ -471,11 +474,11 @@ export function Desktop({
       }
     });
 
-  // macOS X: Only show iPod and Applet Store icons by default (with Macintosh HD shown above)
+  // macOS X: Only show iPod, Applet Store, Games, Photo Booth, and Chat Room icons by default (with Macintosh HD shown above)
   const displayedApps =
     currentTheme === "macosx"
-      ? sortedApps.filter(
-          (app) => app.id === "ipod" || app.id === "applet-viewer"
+      ? [...apps].filter(
+          (app) => app.id === "ipod" || app.id === "applet-viewer" || app.id === "games" || app.id === "photo-booth" || app.id === "chat-room"
         )
       : sortedApps;
 
@@ -497,7 +500,7 @@ export function Desktop({
     // Define the default order for desktop shortcuts
     const defaultOrder: AppId[] = [
       "ipod",
-      "chats",
+      "chat-room",
       "applet-viewer",
       "internet-explorer",
       "textedit",
@@ -506,6 +509,7 @@ export function Desktop({
       "paint",
       "soundboard",
       "minesweeper",
+      "games",
       "synth",
       "terminal",
       "pc",
@@ -514,9 +518,9 @@ export function Desktop({
     // Determine which apps should have shortcuts based on theme
     let appsToShortcut: typeof apps;
     if (currentTheme === "macosx") {
-      // macOS X: only iPod and Applet Store (applet-viewer) as default shortcuts
+      // macOS X: only iPod, Applet Store (applet-viewer), Games, Photo Booth, and Chat Room as default shortcuts
       appsToShortcut = apps.filter(
-        (app) => app.id === "ipod" || app.id === "applet-viewer"
+        (app) => app.id === "ipod" || app.id === "applet-viewer" || app.id === "games" || app.id === "photo-booth" || app.id === "chat-room"
       );
     } else {
       // Other themes: all apps except Finder and Control Panels
@@ -547,7 +551,7 @@ export function Desktop({
     sortedAppsToShortcut.forEach((app) => {
       const appId = app.id as AppId;
 
-      const hasActiveShortcut = desktopItems.some(
+      const existingShortcut = desktopItems.find(
         (item) => item.aliasType === "app" && item.aliasTarget === appId
       );
 
@@ -558,7 +562,17 @@ export function Desktop({
           item.originalPath?.startsWith("/Desktop/")
       );
 
-      if (hasActiveShortcut || hasTrashedShortcut) {
+      // If shortcut exists but name doesn't match app name, update it
+      if (existingShortcut && existingShortcut.name !== app.name) {
+        const newPath = `/Desktop/${app.name}`;
+        // Check if new path already exists
+        if (!desktopItems.some((item) => item.path === newPath && item.status === "active")) {
+          fileStore.renameItem(existingShortcut.path, newPath, app.name);
+        }
+        return;
+      }
+
+      if (existingShortcut || hasTrashedShortcut) {
         return;
       }
 
@@ -581,11 +595,14 @@ export function Desktop({
       }
 
       // Only apply theme-conditional hiding for non-macOS themes and only for
-      // apps that are NOT iPod or Applet Store.
+      // apps that are NOT iPod, Applet Store, Games, Photo Booth, or Chat Room.
       if (
         currentTheme !== "macosx" &&
         appId !== "ipod" &&
-        appId !== "applet-viewer"
+        appId !== "applet-viewer" &&
+        appId !== "games" &&
+        appId !== "photo-booth" &&
+        appId !== "chat-room"
       ) {
         fileStore.updateItemMetadata(createdShortcut.path, {
           hiddenOnThemes: ["macosx"],
@@ -677,6 +694,11 @@ export function Desktop({
     // For app aliases, always resolve from app registry (ignore stored icon)
     if (shortcut.aliasType === "app" && shortcut.aliasTarget) {
       const appId = shortcut.aliasTarget as AppId;
+      // Check if app exists in registry
+      if (!appRegistry[appId]) {
+        console.warn(`[Desktop] App ${appId} not found in registry, skipping shortcut`);
+        return "/icons/default/application.png";
+      }
       try {
         const iconPath = getAppIconPath(appId);
         if (iconPath) {

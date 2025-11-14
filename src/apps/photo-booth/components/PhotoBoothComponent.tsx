@@ -27,12 +27,18 @@ interface PhotoReference {
 
 // Split effects into two categories
 const cssFilters: Effect[] = [
+  { name: "Normal", filter: "none" },
+  { name: "Vintage", filter: "sepia(80%) brightness(90%) contrast(120%)" },
+  { name: "Retro", filter: "sepia(60%) saturate(120%) contrast(110%) brightness(95%) hue-rotate(-10deg)" },
+  { name: "Sepia", filter: "sepia(100%) contrast(110%) brightness(95%)" },
+  { name: "Old Film", filter: "sepia(50%) contrast(130%) brightness(85%) saturate(80%)" },
+  { name: "Polaroid", filter: "sepia(40%) contrast(115%) brightness(105%) saturate(110%)" },
+  { name: "70s", filter: "sepia(30%) saturate(150%) contrast(120%) brightness(100%) hue-rotate(15deg)" },
+  { name: "Film Noir", filter: "grayscale(100%) contrast(150%) brightness(80%)" },
   { name: "Rainbow", filter: "hue-rotate(180deg) saturate(200%)" },
   { name: "Vibrant", filter: "saturate(200%) contrast(150%)" },
   { name: "Cold Blue", filter: "hue-rotate(240deg) saturate(150%)" },
   { name: "High Contrast", filter: "contrast(200%) brightness(110%)" },
-  { name: "Normal", filter: "none" },
-  { name: "Vintage", filter: "sepia(80%) brightness(90%) contrast(120%)" },
   {
     name: "X-Ray",
     filter: "invert(100%) hue-rotate(180deg) hue-rotate(180deg)",

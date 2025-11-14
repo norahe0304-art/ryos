@@ -169,6 +169,18 @@ The project uses:
 - `bun run lint` - Run ESLint
 - `bun run preview` - Preview production build
 
+## Environment Variables
+
+This project requires several environment variables to be configured for AI features and infrastructure services. See [ENV.md](ENV.md) for detailed setup instructions.
+
+Required environment variables:
+- `GOOGLE_GENERATIVE_AI_API_KEY` - For AI chat and code generation
+- `ANTHROPIC_API_KEY` - For AI chat (default model)
+- `OPENAI_API_KEY` - For audio transcription
+- `ELEVENLABS_API_KEY` - For text-to-speech
+- `REDIS_KV_REST_API_URL` & `REDIS_KV_REST_API_TOKEN` - For rate limiting and caching
+- `PUSHER_APP_ID`, `PUSHER_KEY`, `PUSHER_SECRET`, `PUSHER_CLUSTER` - For real-time chat
+
 ## License
 
 This project is licensed under the AGPL-3.0 License - see the [LICENSE](LICENSE) file for details.
