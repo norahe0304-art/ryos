@@ -31,7 +31,7 @@ git push origin main
 
 ```bash
 # Google Gemini API (用于 Chat Room AI)
-GOOGLE_GENERATIVE_AI_API_KEY=AIzaSyByuhMoUdDIVPGaJmJVTCRjkxTfD7dG5kQ
+GOOGLE_GENERATIVE_AI_API_KEY=your_google_gemini_api_key_here
 
 # Anthropic Claude API (用于主聊天)
 ANTHROPIC_API_KEY=your_anthropic_api_key_here
@@ -55,13 +55,44 @@ PUSHER_CLUSTER=us2
 
 **重要**：确保为 Production、Preview 和 Development 环境都设置了这些变量。
 
-### 4. 配置自定义域名
+### 4. 配置 Cloudflare 域名
 
-如果使用 `os.ryo.lu` 域名：
+如果你有域名在 Cloudflare（如 `os.ryo.lu`）：
 
+#### 在 Vercel 中：
 1. 在 Vercel 项目设置中进入 "Domains"
-2. 添加域名 `os.ryo.lu`
-3. 按照 Vercel 的指示配置 DNS 记录
+2. 添加你的域名（例如：`os.ryo.lu`）
+3. Vercel 会显示需要配置的 DNS 记录
+
+#### 在 Cloudflare 中：
+1. 登录 Cloudflare Dashboard
+2. 选择你的域名
+3. 进入 "DNS" → "Records"
+4. 添加/修改以下记录：
+
+**选项 A：使用 CNAME（推荐）**
+- Type: `CNAME`
+- Name: `@` 或 `os`（取决于你想用根域名还是子域名）
+- Target: `cname.vercel-dns.com`
+- Proxy status: 🟠 Proxied（橙色云朵，启用 CDN）
+
+**选项 B：使用 A 记录**
+- Type: `A`
+- Name: `@` 或 `os`
+- IPv4 address: Vercel 提供的 IP 地址（在 Vercel Domains 页面查看）
+- Proxy status: 🟠 Proxied
+
+**对于子域名（如 `www.os.ryo.lu`）：**
+- Type: `CNAME`
+- Name: `www`
+- Target: `cname.vercel-dns.com`
+- Proxy status: 🟠 Proxied
+
+#### 注意事项：
+- ✅ Cloudflare 的代理（Proxied）功能可以正常使用，不会影响 Vercel 部署
+- ✅ SSL/TLS 模式建议设置为 "Full" 或 "Full (strict)"
+- ⚠️ 如果使用 Cloudflare Workers 或其他高级功能，可能需要额外配置
+- ⚠️ Vercel 的 Analytics 和 Speed Insights 在 Cloudflare 代理下仍然可以正常工作
 
 ### 5. 部署后检查
 
