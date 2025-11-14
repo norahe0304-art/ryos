@@ -12,8 +12,6 @@ import { useJsDos, DosProps, DosEvent } from "../../pc/hooks/useJsDos";
 import { useThemeStore } from "@/stores/useThemeStore";
 import { cn } from "@/lib/utils";
 import { useLaunchApp } from "@/hooks/useLaunchApp";
-import { useFilesStore } from "@/stores/useFilesStore";
-import { toast } from "sonner";
 
 export function GamesAppComponent({
   isWindowOpen,
@@ -40,7 +38,6 @@ export function GamesAppComponent({
   const containerRef = useRef<HTMLDivElement>(null);
   const dosPropsRef = useRef<DosProps | null>(null);
   const launchApp = useLaunchApp();
-  const fileStore = useFilesStore();
   const [_contextMenuGame, setContextMenuGame] = useState<Game | null>(null);
   const [contextMenuPos, setContextMenuPos] = useState<{ x: number; y: number } | null>(null);
 
