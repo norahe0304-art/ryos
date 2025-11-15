@@ -83,7 +83,7 @@ function getRedis(): Redis {
 
 export default async function handler(req: Request): Promise<Response> {
   // Wrap everything in try-catch to ensure we always return a valid JSON response
-  let effectiveOrigin: string | null;
+  let effectiveOrigin: string | null = null;
   try {
     // Standard Vercel handler - only accepts Request
     const method = req.method;
@@ -353,19 +353,6 @@ export default async function handler(req: Request): Promise<Response> {
         fallbackOrigin
       );
     }
-  } catch (criticalError) {
-    // Final fallback - if even error handling fails, return minimal JSON
-    console.error("[message-in-bottle] Critical error in handler:", criticalError);
-    return new Response(
-      JSON.stringify({ error: "Internal server error", message: "A server error has occurred" }),
-      {
-        status: 500,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-        },
-      }
-    );
   }
 }
 
