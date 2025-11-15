@@ -95,11 +95,13 @@ export default async function handler(req: Request): Promise<Response> {
     // Log all available environment variables (for debugging)
     const allEnvKeys = typeof process !== "undefined" && process.env 
       ? Object.keys(process.env) 
-      : (typeof Deno !== "undefined" && Deno.env ? Array.from(Deno.env.keys()) : []);
+      : (typeof (globalThis as any).Deno !== "undefined" && (globalThis as any).Deno.env 
+          ? Array.from((globalThis as any).Deno.env.keys()) 
+          : []);
     
     console.error("[message-in-bottle] Total env vars count:", allEnvKeys.length);
-    console.error("[message-in-bottle] Available env vars with REDIS:", allEnvKeys.filter(k => k.includes('REDIS')));
-    console.error("[message-in-bottle] Available env vars with UPSTASH:", allEnvKeys.filter(k => k.includes('UPSTASH')));
+    console.error("[message-in-bottle] Available env vars with REDIS:", allEnvKeys.filter((k: string) => k.includes('REDIS')));
+    console.error("[message-in-bottle] Available env vars with UPSTASH:", allEnvKeys.filter((k: string) => k.includes('UPSTASH')));
     
     // Log what we actually got from getRedisConfig
     console.error("[message-in-bottle] getRedisConfig returned:", {
@@ -110,11 +112,13 @@ export default async function handler(req: Request): Promise<Response> {
     });
     
     // Log runtime information
+    const hasDeno = typeof (globalThis as any).Deno !== "undefined";
+    const hasDenoEnv = hasDeno && !!(globalThis as any).Deno?.env;
     console.error("[message-in-bottle] Runtime info:", {
       hasProcess: typeof process !== "undefined",
       hasProcessEnv: typeof process !== "undefined" && !!process.env,
-      hasDeno: typeof Deno !== "undefined",
-      hasDenoEnv: typeof Deno !== "undefined" && !!Deno.env,
+      hasDeno,
+      hasDenoEnv,
       vercelEnv: typeof process !== "undefined" ? process.env.VERCEL_ENV : undefined,
       nodeEnv: typeof process !== "undefined" ? process.env.NODE_ENV : undefined,
     });
