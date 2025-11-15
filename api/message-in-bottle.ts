@@ -90,6 +90,8 @@ function getRedis(): Redis {
     console.log("[message-in-bottle] REDIS_KV_REST_API_URL:", directUrl ? "exists" : "missing");
     console.log("[message-in-bottle] REDIS_KV_REST_API_TOKEN:", directToken ? "exists" : "missing");
     console.log("[message-in-bottle] process.env keys count:", Object.keys(process.env).length);
+    console.log("[message-in-bottle] VERCEL_ENV:", process.env.VERCEL_ENV);
+    console.log("[message-in-bottle] NODE_ENV:", process.env.NODE_ENV);
     
     // List ALL environment variable names to debug
     const allEnvKeys = Object.keys(process.env).sort();
@@ -100,6 +102,9 @@ function getRedis(): Redis {
       k.includes("REDIS") || k.includes("UPSTASH") || k.includes("redis") || k.includes("upstash")
     );
     console.log("[message-in-bottle] Variables containing REDIS/UPSTASH:", redisRelated);
+    
+    // Check if GOOGLE_GENERATIVE_AI_API_KEY exists (to verify env vars are working)
+    console.log("[message-in-bottle] GOOGLE_GENERATIVE_AI_API_KEY exists:", !!process.env.GOOGLE_GENERATIVE_AI_API_KEY);
     
     // Try to access with different case variations
     const variations = [
