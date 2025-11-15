@@ -4,10 +4,10 @@ import { getRedisConfig } from "./utils/redis-config.js";
 // Vercel Function configuration
 // Using Node.js runtime instead of Edge to ensure environment variables are accessible
 export const runtime = "nodejs";
-export const maxDuration = 10; // Set to 10 seconds for faster timeout detection
+export const maxDuration = 30; // Increased to 30 seconds to allow for Redis operations
 export const config = {
   runtime: "nodejs",
-  maxDuration: 10,
+  maxDuration: 30,
 };
 
 // CORS helper - supports both Edge Runtime (Request) and Node.js Runtime (IncomingMessage)
