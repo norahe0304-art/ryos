@@ -13,13 +13,36 @@ export function getRedisConfig() {
   // Try process.env first (Node.js runtime and some Edge runtimes)
   // Then try Deno.env (Edge Runtime fallback)
   const getEnv = (key) => {
-    if (typeof process !== "undefined" && process.env) {
+    // Method 1: process.env (Node.js and some Edge runtimes)
+    if (typeof process !== "undefined" && process.env && process.env[key]) {
       return process.env[key];
     }
-    // Fallback for Edge Runtime (Deno)
+    
+    // Method 2: Deno.env (Edge Runtime)
     if (typeof Deno !== "undefined" && Deno.env) {
-      return Deno.env.get(key);
+      try {
+        const value = Deno.env.get(key);
+        if (value) return value;
+      } catch (e) {
+        // Deno.env.get may throw in some contexts
+      }
     }
+    
+    // Method 3: globalThis.Deno.env (alternative Edge Runtime access)
+    if (typeof globalThis !== "undefined" && globalThis.Deno && globalThis.Deno.env) {
+      try {
+        const value = globalThis.Deno.env.get(key);
+        if (value) return value;
+      } catch (e) {
+        // May throw in some contexts
+      }
+    }
+    
+    // Method 4: Direct access via globalThis (last resort)
+    if (typeof globalThis !== "undefined" && globalThis.process && globalThis.process.env) {
+      return globalThis.process.env[key];
+    }
+    
     return undefined;
   };
 
