@@ -53,6 +53,15 @@ interface Bottle {
   timestamp: number;
 }
 
+// Initialize Redis at module level (like ie-generate.ts and applet-ai.ts)
+// This ensures environment variables are accessible in Edge Runtime
+// Module-level initialization is critical for Vercel Edge Runtime
+const { url: redisUrl, token: redisToken } = getRedisConfig();
+const redis = new Redis({
+  url: redisUrl as string,
+  token: redisToken as string,
+});
+
 export default async function handler(req: Request): Promise<Response> {
   const effectiveOrigin = getEffectiveOrigin(req);
 
@@ -60,104 +69,24 @@ export default async function handler(req: Request): Promise<Response> {
     return jsonResponse({}, 200, effectiveOrigin);
   }
 
-  // Check Redis environment variables (supports both naming conventions)
-  // First, log all environment variables that contain REDIS or UPSTASH
-  const allEnvKeys = Object.keys(process.env);
-  console.log("[message-in-bottle] Environment check:");
-  console.log("[message-in-bottle] Total env vars:", allEnvKeys.length);
-  console.log("[message-in-bottle] All env vars with REDIS:", allEnvKeys.filter(k => k.includes('REDIS')));
-  console.log("[message-in-bottle] All env vars with UPSTASH:", allEnvKeys.filter(k => k.includes('UPSTASH')));
-  console.log("[message-in-bottle] Sample env var names (first 20):", allEnvKeys.slice(0, 20));
-  console.log("[message-in-bottle] All env var names (full list):", allEnvKeys.sort().join(", "));
-  console.log("[message-in-bottle] VERCEL_ENV:", process.env.VERCEL_ENV);
-  console.log("[message-in-bottle] NODE_ENV:", process.env.NODE_ENV);
-  
-  // Direct check of environment variables
-  const directRedisUrl = process.env.REDIS_KV_REST_API_URL;
-  const directRedisToken = process.env.REDIS_KV_REST_API_TOKEN;
-  const directUpstashUrl = process.env.UPSTASH_REDIS_REST_URL;
-  const directUpstashToken = process.env.UPSTASH_REDIS_REST_TOKEN;
-  
-  console.log("[message-in-bottle] Direct env check:");
-  console.log("[message-in-bottle] REDIS_KV_REST_API_URL:", directRedisUrl ? `${directRedisUrl.substring(0, 30)}...` : "missing");
-  console.log("[message-in-bottle] REDIS_KV_REST_API_TOKEN:", directRedisToken ? "exists" : "missing");
-  console.log("[message-in-bottle] UPSTASH_REDIS_REST_URL:", directUpstashUrl ? `${directUpstashUrl.substring(0, 30)}...` : "missing");
-  console.log("[message-in-bottle] UPSTASH_REDIS_REST_TOKEN:", directUpstashToken ? "exists" : "missing");
-  
-  const { url: redisUrl, token: redisToken } = getRedisConfig();
-  console.log("[message-in-bottle] getRedisConfig result:");
-  console.log("[message-in-bottle] redisUrl:", redisUrl ? `${redisUrl.substring(0, 30)}...` : "undefined");
-  console.log("[message-in-bottle] redisToken:", redisToken ? `${redisToken.substring(0, 20)}...` : "undefined");
-
+  // Redis is initialized at module level (above)
+  // Check if Redis is properly configured
   if (!redisUrl || !redisToken) {
-    console.error("[message-in-bottle] Redis credentials not configured");
-    
-    // Log all available environment variables (for debugging)
-    const allEnvKeys = typeof process !== "undefined" && process.env 
-      ? Object.keys(process.env) 
-      : (typeof (globalThis as any).Deno !== "undefined" && (globalThis as any).Deno.env 
-          ? Array.from((globalThis as any).Deno.env.keys()) 
-          : []);
-    
-    console.error("[message-in-bottle] Total env vars count:", allEnvKeys.length);
-    console.error("[message-in-bottle] Available env vars with REDIS:", allEnvKeys.filter((k: unknown) => typeof k === 'string' && k.includes('REDIS')));
-    console.error("[message-in-bottle] Available env vars with UPSTASH:", allEnvKeys.filter((k: unknown) => typeof k === 'string' && k.includes('UPSTASH')));
-    
-    // Log what we actually got from getRedisConfig
-    console.error("[message-in-bottle] getRedisConfig returned:", {
-      url: redisUrl ? "present" : "missing",
-      token: redisToken ? "present" : "missing",
-      urlType: typeof redisUrl,
-      tokenType: typeof redisToken,
-    });
-    
-    // Log runtime information
-    const hasDeno = typeof (globalThis as any).Deno !== "undefined";
-    const hasDenoEnv = hasDeno && !!(globalThis as any).Deno?.env;
-    console.error("[message-in-bottle] Runtime info:", {
-      hasProcess: typeof process !== "undefined",
-      hasProcessEnv: typeof process !== "undefined" && !!process.env,
-      hasDeno,
-      hasDenoEnv,
-      vercelEnv: typeof process !== "undefined" ? process.env.VERCEL_ENV : undefined,
-      nodeEnv: typeof process !== "undefined" ? process.env.NODE_ENV : undefined,
-    });
-    
-    // Different messages for development vs production
+    console.error("[message-in-bottle] Redis configuration missing at module level");
     const isDevelopment = process.env.NODE_ENV === "development" || process.env.VERCEL_ENV === "development";
-    let errorMessage = "Redis is not configured. ";
-    
-    if (isDevelopment) {
-      errorMessage += "Please ensure:\n1. You're using 'vercel dev' (not 'vite dev')\n2. .env file exists in project root\n3. REDIS_KV_REST_API_URL and REDIS_KV_REST_API_TOKEN (or UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN) are set in .env";
-    } else {
-      errorMessage += "Please check:\n1. Vercel Dashboard → Settings → Environment Variables\n2. Ensure REDIS_KV_REST_API_URL and REDIS_KV_REST_API_TOKEN (or UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN) are set for Production, Preview, and Development\n3. Redeploy after adding environment variables";
-    }
+    const errorMessage = isDevelopment
+      ? "Redis is not configured. Please ensure:\n1. You're using 'vercel dev' (not 'vite dev')\n2. .env file exists in project root\n3. REDIS_KV_REST_API_URL and REDIS_KV_REST_API_TOKEN (or UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN) are set in .env"
+      : "Redis is not configured. Please check:\n1. Vercel Dashboard → Settings → Environment Variables\n2. Ensure REDIS_KV_REST_API_URL and REDIS_KV_REST_API_TOKEN (or UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN) are set for Production, Preview, and Development\n3. Redeploy after adding environment variables";
     
     return jsonResponse(
       {
         error: "Server configuration error",
         message: errorMessage,
-        debug: isDevelopment ? {
-          redisUrl: redisUrl ? "present" : "missing",
-          redisToken: redisToken ? "present" : "missing",
-          hasRedisKvUrl: !!process.env.REDIS_KV_REST_API_URL,
-          hasRedisKvToken: !!process.env.REDIS_KV_REST_API_TOKEN,
-          hasUpstashUrl: !!process.env.UPSTASH_REDIS_REST_URL,
-          hasUpstashToken: !!process.env.UPSTASH_REDIS_REST_TOKEN,
-        } : undefined,
       },
       500,
       effectiveOrigin
     );
   }
-
-  // Initialize Redis
-  console.log("[message-in-bottle] Initializing Redis client...");
-  const redis = new Redis({
-    url: redisUrl,
-    token: redisToken,
-  });
-  console.log("[message-in-bottle] Redis client initialized");
 
   try {
     // Throw a bottle (POST)
