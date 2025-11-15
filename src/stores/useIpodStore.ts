@@ -81,7 +81,15 @@ async function loadDefaultTracks(): Promise<{
   version: number;
 }> {
   try {
-    const res = await fetch("/data/ipod-videos.json");
+    // Add cache-busting query parameter to ensure we get the latest version
+    // Use version from JSON file if available, otherwise use timestamp
+    const cacheBuster = `?v=${Date.now()}`;
+    const res = await fetch(`/data/ipod-videos.json${cacheBuster}`, {
+      cache: 'no-store', // Ensure no caching
+      headers: {
+        'Cache-Control': 'no-cache',
+      },
+    });
     const data = await res.json();
     const videos: unknown[] = data.videos || data;
     const version = data.version || 1;
