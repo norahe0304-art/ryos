@@ -6,12 +6,27 @@
  * 
  * Automatically trims whitespace and removes surrounding quotes if present.
  * Validates URL format and falls back to alternative if URL is invalid.
+ * 
+ * Works in both Node.js and Edge Runtime (Vercel).
  */
 export function getRedisConfig() {
-  const rawUrl1 = process.env.REDIS_KV_REST_API_URL;
-  const rawUrl2 = process.env.UPSTASH_REDIS_REST_URL;
-  const rawToken1 = process.env.REDIS_KV_REST_API_TOKEN;
-  const rawToken2 = process.env.UPSTASH_REDIS_REST_TOKEN;
+  // Try process.env first (Node.js runtime and some Edge runtimes)
+  // Then try Deno.env (Edge Runtime fallback)
+  const getEnv = (key) => {
+    if (typeof process !== "undefined" && process.env) {
+      return process.env[key];
+    }
+    // Fallback for Edge Runtime (Deno)
+    if (typeof Deno !== "undefined" && Deno.env) {
+      return Deno.env.get(key);
+    }
+    return undefined;
+  };
+
+  const rawUrl1 = getEnv("REDIS_KV_REST_API_URL");
+  const rawUrl2 = getEnv("UPSTASH_REDIS_REST_URL");
+  const rawToken1 = getEnv("REDIS_KV_REST_API_TOKEN");
+  const rawToken2 = getEnv("UPSTASH_REDIS_REST_TOKEN");
 
   // Helper to clean and validate URL
   const cleanAndValidateUrl = (rawUrl) => {
