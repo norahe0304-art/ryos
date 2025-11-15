@@ -1,4 +1,5 @@
 import { Redis } from "@upstash/redis";
+import { getRedisConfig } from "./utils/redis-config.js";
 
 // Vercel Edge Function configuration
 export const runtime = "edge";
@@ -60,8 +61,7 @@ export default async function handler(req: Request): Promise<Response> {
   }
 
   // Check Redis environment variables (supports both naming conventions)
-  const redisUrl = process.env.REDIS_KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
-  const redisToken = process.env.REDIS_KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
+  const { url: redisUrl, token: redisToken } = getRedisConfig();
 
   if (!redisUrl || !redisToken) {
     console.error("[message-in-bottle] Redis credentials not configured");
@@ -70,6 +70,7 @@ export default async function handler(req: Request): Promise<Response> {
     console.error("[message-in-bottle] UPSTASH_REDIS_REST_URL:", process.env.UPSTASH_REDIS_REST_URL ? "exists" : "missing");
     console.error("[message-in-bottle] UPSTASH_REDIS_REST_TOKEN:", process.env.UPSTASH_REDIS_REST_TOKEN ? "exists" : "missing");
     console.error("[message-in-bottle] Available env vars with REDIS:", Object.keys(process.env).filter(k => k.includes('REDIS')));
+    console.error("[message-in-bottle] Available env vars with UPSTASH:", Object.keys(process.env).filter(k => k.includes('UPSTASH')));
     
     // Different messages for development vs production
     const isDevelopment = process.env.NODE_ENV === "development" || process.env.VERCEL_ENV === "development";
