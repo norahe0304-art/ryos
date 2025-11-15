@@ -64,6 +64,7 @@ export function Desktop({
   const defaultShortcutOrder: AppId[] = [
     "ipod",
     "chat-room",
+    "message-in-bottle",
     "applet-viewer",
     "internet-explorer",
     "textedit",
@@ -474,11 +475,11 @@ export function Desktop({
       }
     });
 
-  // macOS X: Only show iPod, Applet Store, Games, Photo Booth, and Chat Room icons by default (with Macintosh HD shown above)
+  // macOS X: Only show iPod, Applet Store, Games, Photo Booth, Chat Room, and Message in a Bottle icons by default (with Macintosh HD shown above)
   const displayedApps =
     currentTheme === "macosx"
       ? [...apps].filter(
-          (app) => app.id === "ipod" || app.id === "applet-viewer" || app.id === "games" || app.id === "photo-booth" || app.id === "chat-room"
+          (app) => app.id === "ipod" || app.id === "applet-viewer" || app.id === "games" || app.id === "photo-booth" || app.id === "chat-room" || app.id === "message-in-bottle"
         )
       : sortedApps;
 
@@ -501,6 +502,7 @@ export function Desktop({
     const defaultOrder: AppId[] = [
       "ipod",
       "chat-room",
+      "message-in-bottle",
       "applet-viewer",
       "internet-explorer",
       "textedit",
@@ -518,9 +520,9 @@ export function Desktop({
     // Determine which apps should have shortcuts based on theme
     let appsToShortcut: typeof apps;
     if (currentTheme === "macosx") {
-      // macOS X: only iPod, Applet Store (applet-viewer), Games, Photo Booth, and Chat Room as default shortcuts
+      // macOS X: only iPod, Applet Store (applet-viewer), Games, Photo Booth, Chat Room, and Message in a Bottle as default shortcuts
       appsToShortcut = apps.filter(
-        (app) => app.id === "ipod" || app.id === "applet-viewer" || app.id === "games" || app.id === "photo-booth" || app.id === "chat-room"
+        (app) => app.id === "ipod" || app.id === "applet-viewer" || app.id === "games" || app.id === "photo-booth" || app.id === "chat-room" || app.id === "message-in-bottle"
       );
     } else {
       // Other themes: all apps except Finder and Control Panels

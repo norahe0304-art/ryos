@@ -1,5 +1,4 @@
 {
-  "devCommand": "bun run dev",
   "headers": [
     {
       "source": "/api/(.*)",

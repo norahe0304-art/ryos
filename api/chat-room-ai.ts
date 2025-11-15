@@ -1,6 +1,14 @@
 import { generateText } from "ai";
 import { google } from "@ai-sdk/google";
 
+// Vercel Edge Function configuration
+export const runtime = "edge";
+export const edge = true;
+export const maxDuration = 60;
+export const config = {
+  runtime: "edge",
+};
+
 // CORS helper
 const getEffectiveOrigin = (req: Request): string | null => {
   const origin = req.headers.get("origin");
@@ -52,11 +60,12 @@ export default async function handler(req: Request): Promise<Response> {
     const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
     if (!apiKey || apiKey.trim().length === 0) {
       console.error("[chat-room-ai] GOOGLE_GENERATIVE_AI_API_KEY is not configured");
-      console.error("[chat-room-ai] Available env vars:", Object.keys(process.env).filter(k => k.includes('GOOGLE')));
+      console.error("[chat-room-ai] Available env vars with GOOGLE:", Object.keys(process.env).filter(k => k.includes('GOOGLE')));
+      console.error("[chat-room-ai] Make sure you're using 'vercel dev' (not 'vite dev') and that .env file is in the project root");
       return jsonResponse(
         { 
           error: "API key not configured",
-          message: "GOOGLE_GENERATIVE_AI_API_KEY environment variable is missing or empty. Please configure it in your Vercel project settings."
+          message: "GOOGLE_GENERATIVE_AI_API_KEY is missing. Please ensure:\n1. You're using 'vercel dev' (not 'vite dev')\n2. .env file exists in project root\n3. GOOGLE_GENERATIVE_AI_API_KEY is set in .env"
         },
         500,
         effectiveOrigin
@@ -155,62 +164,50 @@ you write in lowercase except proper nouns. keep responses concise (1-3 sentence
 
       return jsonResponse({ reply: text.trim() }, 200, effectiveOrigin);
     } catch (error) {
-    console.error("[chat-room-ai] Error details:", error);
-    
-    // Log full error for debugging
-    if (error instanceof Error) {
-      console.error("[chat-room-ai] Error name:", error.name);
-      console.error("[chat-room-ai] Error message:", error.message);
-      console.error("[chat-room-ai] Error stack:", error.stack);
-    }
-    
-    // Provide more specific error messages
-    let errorMessage = "Failed to generate response";
-    let errorCode = "unknown_error";
-    
-    if (error instanceof Error) {
-      const errorMsg = error.message.toLowerCase();
+      console.error("[chat-room-ai] Error details:", error);
       
-      // Check for common API key errors
-      if (errorMsg.includes("api key") || errorMsg.includes("authentication") || errorMsg.includes("unauthorized")) {
-        errorMessage = "Invalid or missing API key. Please check your GOOGLE_GENERATIVE_AI_API_KEY configuration in Vercel.";
-        errorCode = "api_key_error";
-      } else if (errorMsg.includes("quota") || errorMsg.includes("limit") || errorMsg.includes("rate limit")) {
-        errorMessage = "API quota exceeded. Please check your Google Cloud billing and quota limits.";
-        errorCode = "quota_exceeded";
-      } else if (errorMsg.includes("permission") || errorMsg.includes("forbidden")) {
-        errorMessage = "API key does not have required permissions. Please check your Google Cloud API key settings.";
-        errorCode = "permission_denied";
-      } else if (errorMsg.includes("network") || errorMsg.includes("fetch")) {
-        errorMessage = "Network error connecting to Google AI. Please try again later.";
-        errorCode = "network_error";
-      } else {
-        errorMessage = `Error: ${error.message}`;
-        errorCode = "generation_error";
+      // Log full error for debugging
+      if (error instanceof Error) {
+        console.error("[chat-room-ai] Error name:", error.name);
+        console.error("[chat-room-ai] Error message:", error.message);
+        console.error("[chat-room-ai] Error stack:", error.stack);
       }
-    }
-    
-    return jsonResponse(
-      { 
-        error: "Failed to generate response",
-        errorCode,
-        message: errorMessage,
-        // Include error details in development for debugging
-        ...(process.env.NODE_ENV === "development" ? { 
-          details: error instanceof Error ? error.message : String(error) 
-        } : {})
-      },
-      500,
-      effectiveOrigin
-    );
-    } catch (innerError) {
-      // This catches errors from the inner try block
-      console.error("[chat-room-ai] Inner error:", innerError);
+      
+      // Provide more specific error messages
+      let errorMessage = "Failed to generate response";
+      let errorCode = "unknown_error";
+      
+      if (error instanceof Error) {
+        const errorMsg = error.message.toLowerCase();
+        
+        // Check for common API key errors
+        if (errorMsg.includes("api key") || errorMsg.includes("authentication") || errorMsg.includes("unauthorized")) {
+          errorMessage = "Invalid or missing API key. Please check your GOOGLE_GENERATIVE_AI_API_KEY configuration in Vercel.";
+          errorCode = "api_key_error";
+        } else if (errorMsg.includes("quota") || errorMsg.includes("limit") || errorMsg.includes("rate limit")) {
+          errorMessage = "API quota exceeded. Please check your Google Cloud billing and quota limits.";
+          errorCode = "quota_exceeded";
+        } else if (errorMsg.includes("permission") || errorMsg.includes("forbidden")) {
+          errorMessage = "API key does not have required permissions. Please check your Google Cloud API key settings.";
+          errorCode = "permission_denied";
+        } else if (errorMsg.includes("network") || errorMsg.includes("fetch")) {
+          errorMessage = "Network error connecting to Google AI. Please try again later.";
+          errorCode = "network_error";
+        } else {
+          errorMessage = `Error: ${error.message}`;
+          errorCode = "generation_error";
+        }
+      }
+      
       return jsonResponse(
-        {
+        { 
           error: "Failed to generate response",
-          errorCode: "inner_error",
-          message: innerError instanceof Error ? innerError.message : "Unknown error occurred"
+          errorCode,
+          message: errorMessage,
+          // Include error details in development for debugging
+          ...(process.env.NODE_ENV === "development" ? { 
+            details: error instanceof Error ? error.message : String(error) 
+          } : {})
         },
         500,
         effectiveOrigin

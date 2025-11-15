@@ -16,6 +16,7 @@ export const appIds = [
   "control-panels",
   "games",
   "chat-room",
+  "message-in-bottle",
 ] as const;
 
 export type AppId = (typeof appIds)[number];

@@ -39,7 +39,8 @@ export interface BaseApp<TInitialData = unknown> {
     | "terminal"
     | "applet-viewer"
     | "games"
-    | "chat-room";
+    | "chat-room"
+    | "message-in-bottle";
   name: string;
   icon: string | { type: "image"; src: string };
   description: string;

@@ -72,9 +72,42 @@ PUSHER_CLUSTER=us2
 
 ### 本地开发
 
+**重要**：本地开发时必须使用 `vercel dev` 来运行开发服务器，这样才能处理 API 路由。
+
 1. 在项目根目录创建 `.env` 文件（不要提交到 Git）
 2. 复制上述所有环境变量到 `.env` 文件
 3. 替换 `your_*_here` 为实际的 API 密钥和配置值
+4. 运行开发服务器：
+   ```bash
+   # 使用 vercel dev（推荐，支持 API 路由）
+   bun run dev:vercel
+   # 或者
+   vercel dev --listen 3000 --yes
+   
+   # 注意：不要使用 `bun dev`，因为它不会处理 API 路由
+   ```
+5. 访问 `http://localhost:3000`（vercel dev 默认端口是 3000）
+
+**验证环境变量是否正确加载**：
+
+运行 `vercel dev` 后，在终端中应该能看到环境变量被加载的日志。如果 API 调用失败并显示环境变量未配置的错误，请检查：
+
+1. `.env` 文件是否在项目根目录（与 `package.json` 同级）
+2. `.env` 文件格式是否正确（每行一个变量，格式：`KEY=value`，不要有引号）
+3. 是否使用了 `vercel dev` 而不是 `vite dev` 或 `bun dev`
+4. 重启 `vercel dev` 服务器（修改 .env 后需要重启）
+
+**示例 .env 文件格式**：
+```bash
+GOOGLE_GENERATIVE_AI_API_KEY=AIzaSy...
+REDIS_KV_REST_API_URL=https://...
+REDIS_KV_REST_API_TOKEN=AX...
+```
+
+**注意**：
+- `.env` 文件中的值不需要引号
+- 不要在等号两边加空格（`KEY = value` 是错误的，应该是 `KEY=value`）
+- 如果值包含特殊字符，可能需要用引号包裹
 
 ### Vercel 部署
 
@@ -92,6 +125,7 @@ PUSHER_CLUSTER=us2
 - `api/audio-transcribe.ts` - 使用 `OPENAI_API_KEY`
 - `api/chat-rooms.js` - 使用 `REDIS_KV_REST_API_URL`, `REDIS_KV_REST_API_TOKEN`, `PUSHER_APP_ID`, `PUSHER_KEY`, `PUSHER_SECRET`, `PUSHER_CLUSTER`
 - `api/chat-room-ai.ts` - 使用 `GOOGLE_GENERATIVE_AI_API_KEY`
+- `api/message-in-bottle.ts` - 使用 `REDIS_KV_REST_API_URL`, `REDIS_KV_REST_API_TOKEN`
 - `api/applet-ai.ts` - 使用 `GOOGLE_GENERATIVE_AI_API_KEY`, `REDIS_KV_REST_API_URL`, `REDIS_KV_REST_API_TOKEN`
 - `api/lyrics.ts` - 使用 `REDIS_KV_REST_API_URL`, `REDIS_KV_REST_API_TOKEN`
 - `api/translate-lyrics.ts` - 使用 `REDIS_KV_REST_API_URL`, `REDIS_KV_REST_API_TOKEN`

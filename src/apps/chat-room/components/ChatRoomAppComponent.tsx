@@ -199,19 +199,29 @@ export function ChatRoomAppComponent({
           }),
         });
 
+        // Read response as text first (can only read once)
+        const responseText = await response.text();
+
         if (!response.ok) {
           // Try to get error details from response
           let errorText = "Failed to get response";
           try {
-            const errorData = await response.json();
+            const errorData = JSON.parse(responseText);
             errorText = errorData.message || errorData.error || errorText;
-          } catch {
-            errorText = `HTTP error! status: ${response.status}`;
+          } catch (parseError) {
+            // If response is not JSON, use the text or status
+            errorText = responseText || `HTTP ${response.status}: ${response.statusText}`;
           }
           throw new Error(errorText);
         }
 
-        const data = await response.json();
+        // Parse successful response
+        let data;
+        try {
+          data = JSON.parse(responseText);
+        } catch (parseError) {
+          throw new Error("Invalid response format from server");
+        }
         
         // Check if response contains an error
         if (data.error) {
@@ -219,7 +229,7 @@ export function ChatRoomAppComponent({
         }
         
         if (!data.reply) {
-          throw new Error("Invalid response format");
+          throw new Error("Invalid response format: missing reply");
         }
 
         const aiMessage: Message = {

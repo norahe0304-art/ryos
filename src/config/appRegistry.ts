@@ -15,6 +15,7 @@ import { TerminalApp } from "@/apps/terminal";
 import { AppletViewerApp } from "@/apps/applet-viewer";
 import { GamesApp } from "@/apps/games";
 import { ChatRoomApp } from "@/apps/chat-room";
+import { MessageInBottleApp } from "@/apps/message-in-bottle";
 import { appIds } from "./appIds";
 import type {
   BaseApp,
@@ -170,6 +171,13 @@ export const appRegistry = {
     windowConfig: {
       defaultSize: { width: 700, height: 600 },
       minSize: { width: 500, height: 400 },
+    } as WindowConstraints,
+  },
+  [MessageInBottleApp.id]: {
+    ...MessageInBottleApp,
+    windowConfig: {
+      defaultSize: { width: 600, height: 700 },
+      minSize: { width: 500, height: 500 },
     } as WindowConstraints,
   },
 } as const;
