@@ -1503,13 +1503,22 @@ export function IpodAppComponent({
         }
       }
 
-      if (latestItems && currentMenu.items !== latestItems) {
-        const updatedHistory = [...prevHistory];
-        updatedHistory[currentMenuIndex] = {
-          ...currentMenu,
-          items: latestItems,
-        };
-        return updatedHistory;
+      if (latestItems) {
+        // Compare items length and content to detect changes
+        const itemsChanged = 
+          currentMenu.items.length !== latestItems.length ||
+          currentMenu.items.some((item, index) => 
+            !latestItems[index] || item.label !== latestItems[index].label
+          );
+        
+        if (itemsChanged) {
+          const updatedHistory = [...prevHistory];
+          updatedHistory[currentMenuIndex] = {
+            ...currentMenu,
+            items: latestItems,
+          };
+          return updatedHistory;
+        }
       }
 
       return prevHistory;
