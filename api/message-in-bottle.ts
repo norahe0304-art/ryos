@@ -319,8 +319,9 @@ export default async function handler(req: Request): Promise<Response> {
       }
     }
 
-        return jsonResponse({ error: "Method not allowed" }, 405, effectiveOrigin);
-      } catch (error) {
+    // Method not allowed
+    return jsonResponse({ error: "Method not allowed" }, 405, effectiveOrigin);
+    } catch (error) {
         console.error("[message-in-bottle] Unexpected error:", error);
         if (error instanceof Error) {
           console.error("[message-in-bottle] Error name:", error.name);
