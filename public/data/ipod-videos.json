@@ -586,9 +586,9 @@
       "lyricOffset": 1000
     },
     {
-      "id": "uIWypArI73w",
-      "url": "https://www.youtube.com/watch?v=uIWypArI73w",
-      "title": "不能说的秘密",
+      "id": "Qw6GNUr67ps",
+      "url": "https://www.youtube.com/watch?v=Qw6GNUr67ps&list=RDQw6GNUr67ps&start_radio=1",
+      "title": "安静",
       "artist": "周杰伦",
       "lyricOffset": 1000
     },
@@ -598,7 +598,35 @@
       "title": "pulse ray saetta",
       "artist": "",
       "lyricOffset": 1000
+    },
+    {
+      "id": "fo4zyjWTaUc",
+      "url": "https://www.youtube.com/watch?v=fo4zyjWTaUc&list=RDfo4zyjWTaUc&start_radio=1",
+      "title": "沙龙",
+      "artist": "陈奕迅",
+      "lyricOffset": 1000
+    },
+    {
+      "id": "bJHCgo85irM",
+      "url": "https://www.youtube.com/watch?v=bJHCgo85irM&list=RDbJHCgo85irM&start_radio=1",
+      "title": "但是求其爱",
+      "artist": "陈奕迅",
+      "lyricOffset": 1000
+    },
+    {
+      "id": "CYT9DPJdtS4",
+      "url": "https://www.youtube.com/watch?v=CYT9DPJdtS4&list=RDCYT9DPJdtS4&start_radio=1",
+      "title": "暗号",
+      "artist": "周杰伦",
+      "lyricOffset": 1000
+    },
+    {
+      "id": "DYptgVvkVLQ",
+      "url": "https://www.youtube.com/watch?v=DYptgVvkVLQ&list=RDDYptgVvkVLQ&start_radio=1",
+      "title": "晴天",
+      "artist": "周杰伦",
+      "lyricOffset": 1000
     }
   ],
-  "version": 7
+  "version": 8
 }
