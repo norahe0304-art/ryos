@@ -112,7 +112,7 @@ export function MessageInBottleAppComponent({
       if (!response.ok) {
         // Restore message on error
         setMessage(messageToSend);
-        let errorMessage = "Failed to throw bottle";
+        let errorMessage = "扔瓶子失败";
         try {
           const errorData = JSON.parse(responseText);
           errorMessage = errorData.message || errorData.error || errorMessage;
@@ -168,7 +168,7 @@ export function MessageInBottleAppComponent({
           setBottleCount(0);
           return;
         }
-        throw new Error(errorData.message || errorData.error || "Failed to pick bottle");
+        throw new Error(errorData.message || errorData.error || "捡瓶子失败");
       }
 
       const data = await response.json();
