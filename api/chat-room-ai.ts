@@ -122,40 +122,65 @@ you write in lowercase except proper nouns. keep responses concise (1-3 sentence
     ];
 
     // Use Gemini 2.5 Flash (works globally, not blocked in China)
-    // Create provider with explicit API key
-    const googleProvider = google({
-      apiKey: apiKey,
-    });
+    // @ai-sdk/google automatically reads from GOOGLE_GENERATIVE_AI_API_KEY env var
+    // But we can also explicitly pass it if needed
+    console.log("[chat-room-ai] Attempting to generate text with Gemini...");
     
     const { text } = await generateText({
-      model: googleProvider("gemini-2.5-flash"),
+      model: google("gemini-2.5-flash"),
       messages: modelMessages,
       temperature: 0.8, // Higher temperature for more personality
       maxOutputTokens: 500, // Keep responses concise
     });
+    
+    console.log("[chat-room-ai] Successfully generated response, length:", text.length);
 
     return jsonResponse({ reply: text.trim() }, 200, effectiveOrigin);
   } catch (error) {
-    console.error("[chat-room-ai] Error:", error);
+    console.error("[chat-room-ai] Error details:", error);
+    
+    // Log full error for debugging
+    if (error instanceof Error) {
+      console.error("[chat-room-ai] Error name:", error.name);
+      console.error("[chat-room-ai] Error message:", error.message);
+      console.error("[chat-room-ai] Error stack:", error.stack);
+    }
     
     // Provide more specific error messages
     let errorMessage = "Failed to generate response";
+    let errorCode = "unknown_error";
+    
     if (error instanceof Error) {
+      const errorMsg = error.message.toLowerCase();
+      
       // Check for common API key errors
-      if (error.message.includes("API key") || error.message.includes("authentication")) {
-        errorMessage = "Invalid or missing API key. Please check your GOOGLE_GENERATIVE_AI_API_KEY configuration.";
-      } else if (error.message.includes("quota") || error.message.includes("limit")) {
-        errorMessage = "API quota exceeded. Please check your Google Cloud billing.";
+      if (errorMsg.includes("api key") || errorMsg.includes("authentication") || errorMsg.includes("unauthorized")) {
+        errorMessage = "Invalid or missing API key. Please check your GOOGLE_GENERATIVE_AI_API_KEY configuration in Vercel.";
+        errorCode = "api_key_error";
+      } else if (errorMsg.includes("quota") || errorMsg.includes("limit") || errorMsg.includes("rate limit")) {
+        errorMessage = "API quota exceeded. Please check your Google Cloud billing and quota limits.";
+        errorCode = "quota_exceeded";
+      } else if (errorMsg.includes("permission") || errorMsg.includes("forbidden")) {
+        errorMessage = "API key does not have required permissions. Please check your Google Cloud API key settings.";
+        errorCode = "permission_denied";
+      } else if (errorMsg.includes("network") || errorMsg.includes("fetch")) {
+        errorMessage = "Network error connecting to Google AI. Please try again later.";
+        errorCode = "network_error";
       } else {
         errorMessage = `Error: ${error.message}`;
+        errorCode = "generation_error";
       }
     }
     
     return jsonResponse(
       { 
         error: "Failed to generate response",
+        errorCode,
         message: errorMessage,
-        details: process.env.NODE_ENV === "development" ? String(error) : undefined
+        // Include error details in development for debugging
+        ...(process.env.NODE_ENV === "development" ? { 
+          details: error instanceof Error ? error.message : String(error) 
+        } : {})
       },
       500,
       effectiveOrigin
