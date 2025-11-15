@@ -322,25 +322,25 @@ export default async function handler(req: Request): Promise<Response> {
     // Method not allowed
     return jsonResponse({ error: "Method not allowed" }, 405, effectiveOrigin);
     } catch (error) {
-        console.error("[message-in-bottle] Unexpected error:", error);
-        if (error instanceof Error) {
-          console.error("[message-in-bottle] Error name:", error.name);
-          console.error("[message-in-bottle] Error message:", error.message);
-          console.error("[message-in-bottle] Error stack:", error.stack);
-        }
-        return jsonResponse(
-          {
-            error: "Internal server error",
-            message: error instanceof Error ? error.message : "Unknown error occurred",
-            ...(process.env.NODE_ENV === "development" ? {
-              details: error instanceof Error ? error.stack : String(error)
-            } : {})
-          },
-          500,
-          effectiveOrigin
-        );
+      console.error("[message-in-bottle] Unexpected error:", error);
+      if (error instanceof Error) {
+        console.error("[message-in-bottle] Error name:", error.name);
+        console.error("[message-in-bottle] Error message:", error.message);
+        console.error("[message-in-bottle] Error stack:", error.stack);
       }
-    } catch (outerError) {
+      return jsonResponse(
+        {
+          error: "Internal server error",
+          message: error instanceof Error ? error.message : "Unknown error occurred",
+          ...(process.env.NODE_ENV === "development" ? {
+            details: error instanceof Error ? error.stack : String(error)
+          } : {})
+        },
+        500,
+        effectiveOrigin
+      );
+    }
+  } catch (outerError) {
       // Top-level error handler - ensure we always return valid JSON
       console.error("[message-in-bottle] Top-level error:", outerError);
       const fallbackOrigin = effectiveOrigin || "https://os.nora-he.com";
