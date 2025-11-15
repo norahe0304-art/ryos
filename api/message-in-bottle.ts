@@ -53,14 +53,23 @@ interface Bottle {
   timestamp: number;
 }
 
-// Initialize Redis at module level (like ie-generate.ts and applet-ai.ts)
-// This ensures environment variables are accessible in Edge Runtime
-// Module-level initialization is critical for Vercel Edge Runtime
-const { url: redisUrl, token: redisToken } = getRedisConfig();
-const redis = new Redis({
-  url: redisUrl as string,
-  token: redisToken as string,
-});
+// Initialize Redis lazily (environment variables may not be available at module level in Edge Runtime)
+// Cache the instance to avoid re-initialization on each request
+let redisInstance: Redis | null = null;
+
+function getRedis(): Redis {
+  if (!redisInstance) {
+    const { url: redisUrl, token: redisToken } = getRedisConfig();
+    if (!redisUrl || !redisToken) {
+      throw new Error("Redis configuration not available. Please check environment variables.");
+    }
+    redisInstance = new Redis({
+      url: redisUrl,
+      token: redisToken,
+    });
+  }
+  return redisInstance;
+}
 
 export default async function handler(req: Request): Promise<Response> {
   const effectiveOrigin = getEffectiveOrigin(req);
@@ -69,10 +78,12 @@ export default async function handler(req: Request): Promise<Response> {
     return jsonResponse({}, 200, effectiveOrigin);
   }
 
-  // Redis is initialized at module level (above)
-  // Check if Redis is properly configured
-  if (!redisUrl || !redisToken) {
-    console.error("[message-in-bottle] Redis configuration missing at module level");
+  // Get Redis client (lazy initialization)
+  let redis: Redis;
+  try {
+    redis = getRedis();
+  } catch (error) {
+    console.error("[message-in-bottle] Failed to initialize Redis:", error);
     const isDevelopment = process.env.NODE_ENV === "development" || process.env.VERCEL_ENV === "development";
     const errorMessage = isDevelopment
       ? "Redis is not configured. Please ensure:\n1. You're using 'vercel dev' (not 'vite dev')\n2. .env file exists in project root\n3. REDIS_KV_REST_API_URL and REDIS_KV_REST_API_TOKEN (or UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN) are set in .env"
