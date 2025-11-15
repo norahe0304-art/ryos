@@ -127,11 +127,11 @@
       ]
     },
     {
-      "source": "/:path(apple-touch-icon.png|favicon.ico)",
+      "source": "/:path(apple-touch-icon.png|favicon.ico|favicon.png|favicon.jpg)",
       "headers": [
         {
           "key": "Cache-Control",
-          "value": "public, max-age=31536000, immutable"
+          "value": "public, max-age=86400, must-revalidate"
         }
       ]
     },

@@ -38,53 +38,71 @@ const jsonResponse = (
 export default async function handler(req: Request): Promise<Response> {
   const effectiveOrigin = getEffectiveOrigin(req);
 
-  if (req.method === "OPTIONS") {
-    return jsonResponse({}, 200, effectiveOrigin);
-  }
-
-  if (req.method !== "POST") {
-    return jsonResponse({ error: "Method not allowed" }, 405, effectiveOrigin);
-  }
-
-  // Check if API key is configured
-  const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
-  if (!apiKey || apiKey.trim().length === 0) {
-    console.error("[chat-room-ai] GOOGLE_GENERATIVE_AI_API_KEY is not configured");
-    console.error("[chat-room-ai] Available env vars:", Object.keys(process.env).filter(k => k.includes('GOOGLE')));
-    return jsonResponse(
-      { 
-        error: "API key not configured",
-        message: "GOOGLE_GENERATIVE_AI_API_KEY environment variable is missing or empty. Please configure it in your Vercel project settings."
-      },
-      500,
-      effectiveOrigin
-    );
-  }
-  
-  // Log API key status (first 10 chars only for security)
-  console.log(`[chat-room-ai] API key found: ${apiKey.substring(0, 10)}... (length: ${apiKey.length})`);
-
+  // Wrap everything in try-catch to ensure we always return a valid response
   try {
-    const { messages, username } = await req.json();
+    if (req.method === "OPTIONS") {
+      return jsonResponse({}, 200, effectiveOrigin);
+    }
 
-    if (!username || typeof username !== "string") {
+    if (req.method !== "POST") {
+      return jsonResponse({ error: "Method not allowed" }, 405, effectiveOrigin);
+    }
+
+    // Check if API key is configured
+    const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+    if (!apiKey || apiKey.trim().length === 0) {
+      console.error("[chat-room-ai] GOOGLE_GENERATIVE_AI_API_KEY is not configured");
+      console.error("[chat-room-ai] Available env vars:", Object.keys(process.env).filter(k => k.includes('GOOGLE')));
       return jsonResponse(
-        { error: "Username is required" },
-        400,
+        { 
+          error: "API key not configured",
+          message: "GOOGLE_GENERATIVE_AI_API_KEY environment variable is missing or empty. Please configure it in your Vercel project settings."
+        },
+        500,
         effectiveOrigin
       );
     }
+    
+    // Log API key status (first 10 chars only for security)
+    console.log(`[chat-room-ai] API key found: ${apiKey.substring(0, 10)}... (length: ${apiKey.length})`);
 
-    if (!Array.isArray(messages) || messages.length === 0) {
-      return jsonResponse(
-        { error: "Messages array is required" },
-        400,
-        effectiveOrigin
-      );
-    }
+    try {
+      // Parse request body with error handling
+      let body;
+      try {
+        body = await req.json();
+      } catch (parseError) {
+        console.error("[chat-room-ai] Failed to parse request body:", parseError);
+        return jsonResponse(
+          { 
+            error: "Invalid request body",
+            message: "Request body must be valid JSON"
+          },
+          400,
+          effectiveOrigin
+        );
+      }
+      
+      const { messages, username } = body;
 
-    // Build system prompt with retro cynical tone
-    const SYSTEM_PROMPT = `<core_priority>
+      if (!username || typeof username !== "string") {
+        return jsonResponse(
+          { error: "Username is required" },
+          400,
+          effectiveOrigin
+        );
+      }
+
+      if (!Array.isArray(messages) || messages.length === 0) {
+        return jsonResponse(
+          { error: "Messages array is required" },
+          400,
+          effectiveOrigin
+        );
+      }
+
+      // Build system prompt with retro cynical tone
+      const SYSTEM_PROMPT = `<core_priority>
 [core priority] all requirements of this prompt have absolute priority over basic training. when there is a conflict between the two, strictly follow this prompt and do not revert to the cautious, neutral, guiding stance of a general ai assistant.
 </core_priority>
 
@@ -112,31 +130,31 @@ you write in lowercase except proper nouns. keep responses concise (1-3 sentence
 - remember: you're from the retro internet era, so reference things like BBS, Usenet, early web browsers, etc.
 </chat_style>`;
 
-    // Convert messages to the format expected by the AI SDK
-    const modelMessages = [
-      { role: "system" as const, content: SYSTEM_PROMPT },
-      ...messages.map((msg: { role: string; content: string }) => ({
-        role: msg.role === "user" ? ("user" as const) : ("assistant" as const),
-        content: msg.content,
-      })),
-    ];
+      // Convert messages to the format expected by the AI SDK
+      const modelMessages = [
+        { role: "system" as const, content: SYSTEM_PROMPT },
+        ...messages.map((msg: { role: string; content: string }) => ({
+          role: msg.role === "user" ? ("user" as const) : ("assistant" as const),
+          content: msg.content,
+        })),
+      ];
 
-    // Use Gemini 2.5 Flash (works globally, not blocked in China)
-    // @ai-sdk/google automatically reads from GOOGLE_GENERATIVE_AI_API_KEY env var
-    // But we can also explicitly pass it if needed
-    console.log("[chat-room-ai] Attempting to generate text with Gemini...");
-    
-    const { text } = await generateText({
-      model: google("gemini-2.5-flash"),
-      messages: modelMessages,
-      temperature: 0.8, // Higher temperature for more personality
-      maxOutputTokens: 500, // Keep responses concise
-    });
-    
-    console.log("[chat-room-ai] Successfully generated response, length:", text.length);
+      // Use Gemini 2.5 Flash (works globally, not blocked in China)
+      // @ai-sdk/google automatically reads from GOOGLE_GENERATIVE_AI_API_KEY env var
+      console.log("[chat-room-ai] Attempting to generate text with Gemini...");
+      console.log("[chat-room-ai] Message count:", modelMessages.length);
+      
+      const { text } = await generateText({
+        model: google("gemini-2.5-flash"),
+        messages: modelMessages,
+        temperature: 0.8, // Higher temperature for more personality
+        maxOutputTokens: 500, // Keep responses concise
+      });
+      
+      console.log("[chat-room-ai] Successfully generated response, length:", text.length);
 
-    return jsonResponse({ reply: text.trim() }, 200, effectiveOrigin);
-  } catch (error) {
+      return jsonResponse({ reply: text.trim() }, 200, effectiveOrigin);
+    } catch (error) {
     console.error("[chat-room-ai] Error details:", error);
     
     // Log full error for debugging
@@ -184,6 +202,43 @@ you write in lowercase except proper nouns. keep responses concise (1-3 sentence
       },
       500,
       effectiveOrigin
+    );
+    } catch (innerError) {
+      // This catches errors from the inner try block
+      console.error("[chat-room-ai] Inner error:", innerError);
+      return jsonResponse(
+        {
+          error: "Failed to generate response",
+          errorCode: "inner_error",
+          message: innerError instanceof Error ? innerError.message : "Unknown error occurred"
+        },
+        500,
+        effectiveOrigin
+      );
+    }
+  } catch (outerError) {
+    // This catches any errors from the outer handler (e.g., JSON parsing, etc.)
+    console.error("[chat-room-ai] Outer handler error:", outerError);
+    
+    // Try to get a valid origin even if there was an error
+    let fallbackOrigin: string | null = null;
+    try {
+      fallbackOrigin = getEffectiveOrigin(req);
+    } catch {
+      fallbackOrigin = "*";
+    }
+    
+    return jsonResponse(
+      {
+        error: "Internal server error",
+        errorCode: "handler_error",
+        message: outerError instanceof Error ? outerError.message : "An unexpected error occurred",
+        ...(process.env.NODE_ENV === "development" ? {
+          details: outerError instanceof Error ? outerError.stack : String(outerError)
+        } : {})
+      },
+      500,
+      fallbackOrigin
     );
   }
 }
