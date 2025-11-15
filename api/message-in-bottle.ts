@@ -77,16 +77,36 @@ export default async function handler(req: Request): Promise<Response> {
     console.error("[message-in-bottle] Available env vars with REDIS:", Object.keys(process.env).filter(k => k.includes('REDIS')));
     console.error("[message-in-bottle] Available env vars with UPSTASH:", Object.keys(process.env).filter(k => k.includes('UPSTASH')));
     
+    // Log what we actually got from getRedisConfig
+    console.error("[message-in-bottle] getRedisConfig returned:", {
+      url: redisUrl ? "present" : "missing",
+      token: redisToken ? "present" : "missing",
+      urlType: typeof redisUrl,
+      tokenType: typeof redisToken,
+    });
+    
     // Different messages for development vs production
     const isDevelopment = process.env.NODE_ENV === "development" || process.env.VERCEL_ENV === "development";
-    const errorMessage = isDevelopment
-      ? "Redis is not configured. Please ensure:\n1. You're using 'vercel dev' (not 'vite dev')\n2. .env file exists in project root\n3. REDIS_KV_REST_API_URL and REDIS_KV_REST_API_TOKEN (or UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN) are set in .env"
-      : "Redis is not configured. Please add REDIS_KV_REST_API_URL and REDIS_KV_REST_API_TOKEN (or UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN) in Vercel Dashboard → Settings → Environment Variables";
+    let errorMessage = "Redis is not configured. ";
+    
+    if (isDevelopment) {
+      errorMessage += "Please ensure:\n1. You're using 'vercel dev' (not 'vite dev')\n2. .env file exists in project root\n3. REDIS_KV_REST_API_URL and REDIS_KV_REST_API_TOKEN (or UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN) are set in .env";
+    } else {
+      errorMessage += "Please check:\n1. Vercel Dashboard → Settings → Environment Variables\n2. Ensure REDIS_KV_REST_API_URL and REDIS_KV_REST_API_TOKEN (or UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN) are set for Production, Preview, and Development\n3. Redeploy after adding environment variables";
+    }
     
     return jsonResponse(
       {
         error: "Server configuration error",
         message: errorMessage,
+        debug: isDevelopment ? {
+          redisUrl: redisUrl ? "present" : "missing",
+          redisToken: redisToken ? "present" : "missing",
+          hasRedisKvUrl: !!process.env.REDIS_KV_REST_API_URL,
+          hasRedisKvToken: !!process.env.REDIS_KV_REST_API_TOKEN,
+          hasUpstashUrl: !!process.env.UPSTASH_REDIS_REST_URL,
+          hasUpstashToken: !!process.env.UPSTASH_REDIS_REST_TOKEN,
+        } : undefined,
       },
       500,
       effectiveOrigin
