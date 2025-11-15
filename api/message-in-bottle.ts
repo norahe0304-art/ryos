@@ -83,9 +83,9 @@ let redisInstance: Redis | null = null;
 
 function getRedis(): Redis {
   if (!redisInstance) {
-    // Fast path: Try environment variables first, then fallback to hardcoded values
-    const directUrl = process.env.REDIS_KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
-    const directToken = process.env.REDIS_KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
+    // Fast path: Try UPSTASH_REDIS_REST_* first (as configured in Vercel), then fallback
+    const directUrl = process.env.UPSTASH_REDIS_REST_URL || process.env.REDIS_KV_REST_API_URL;
+    const directToken = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.REDIS_KV_REST_API_TOKEN;
     
     // TEMPORARY FIX: Hardcode Redis credentials as fallback if env vars are missing
     // This is a workaround for Vercel environment variable injection issue

@@ -46,10 +46,11 @@ export function getRedisConfig() {
     return undefined;
   };
 
-  const rawUrl1 = getEnv("REDIS_KV_REST_API_URL");
-  const rawUrl2 = getEnv("UPSTASH_REDIS_REST_URL");
-  const rawToken1 = getEnv("REDIS_KV_REST_API_TOKEN");
-  const rawToken2 = getEnv("UPSTASH_REDIS_REST_TOKEN");
+  // Try UPSTASH_REDIS_REST_* first (preferred), then REDIS_KV_REST_API_* as fallback
+  const rawUrl1 = getEnv("UPSTASH_REDIS_REST_URL");
+  const rawUrl2 = getEnv("REDIS_KV_REST_API_URL");
+  const rawToken1 = getEnv("UPSTASH_REDIS_REST_TOKEN");
+  const rawToken2 = getEnv("REDIS_KV_REST_API_TOKEN");
 
   // Helper to clean and validate URL
   const cleanAndValidateUrl = (rawUrl) => {
