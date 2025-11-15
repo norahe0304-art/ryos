@@ -103,7 +103,7 @@ export async function sendPusherBeamsNotification(options: {
       throw error;
     }
 
-    const result = await response.json();
+    const result = await response.json() as { publishId: string };
     return { publishId: result.publishId };
   } catch (error) {
     if (!silent) {
