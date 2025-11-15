@@ -55,8 +55,8 @@ export function MessageInBottleAppComponent({
   useEffect(() => {
     if (bottleThrownEvent) {
       // Show notification when someone throws a bottle
-      toast.info("🌊 海里出现新瓶子！", {
-        description: "有人刚刚向大海扔了一个瓶子。",
+      toast.info("🌊 New bottle in the sea!", {
+        description: "Someone just threw a bottle into the ocean.",
         duration: 3000,
       });
     }
@@ -112,7 +112,7 @@ export function MessageInBottleAppComponent({
       if (!response.ok) {
         // Restore message on error
         setMessage(messageToSend);
-        let errorMessage = "扔瓶子失败";
+        let errorMessage = "Failed to throw bottle";
         try {
           const errorData = JSON.parse(responseText);
           errorMessage = errorData.message || errorData.error || errorMessage;
@@ -133,15 +133,15 @@ export function MessageInBottleAppComponent({
       }
 
       // Success - message already cleared, show success toast
-      toast.success("✅ 瓶子已扔入大海！", {
-        description: "你的消息正在海洋中漂流...",
-        duration: 3000, // 显示 3 秒
+      toast.success("✅ Bottle thrown into the sea!", {
+        description: "Your message is now floating in the ocean.",
+        duration: 3000, // Show for 3 seconds
       });
     } catch (error) {
       console.error("Error throwing bottle:", error);
-      toast.error("❌ 扔瓶子失败", {
-        description: error instanceof Error ? error.message : "请重试。",
-        duration: 4000, // 错误信息显示更久
+      toast.error("❌ Failed to throw bottle", {
+        description: error instanceof Error ? error.message : "Please try again.",
+        duration: 4000, // Show errors longer
       });
     } finally {
       setIsThrowing(false);
@@ -162,13 +162,13 @@ export function MessageInBottleAppComponent({
       if (!response.ok) {
         const errorData = await response.json();
         if (response.status === 404) {
-          toast.info("🌊 大海是空的", {
-            description: "成为第一个扔瓶子的人吧！",
+          toast.info("🌊 The sea is empty", {
+            description: "Be the first to throw a bottle!",
           });
           setBottleCount(0);
           return;
         }
-        throw new Error(errorData.message || errorData.error || "捡瓶子失败");
+        throw new Error(errorData.message || errorData.error || "Failed to pick bottle");
       }
 
       const data = await response.json();
@@ -181,15 +181,15 @@ export function MessageInBottleAppComponent({
         setBottleCount(bottleCount - 1);
       }
       
-      toast.success("🎣 捡到瓶子了！", {
-        description: `你从大海中找到了一个消息。(${fetchTime}ms)`,
-        duration: 3000, // 显示 3 秒
+      toast.success("🎣 Bottle picked up!", {
+        description: `You found a message from the sea. (${fetchTime}ms)`,
+        duration: 3000, // Show for 3 seconds
       });
     } catch (error) {
       console.error("Error picking bottle:", error);
-      toast.error("❌ 捡瓶子失败", {
-        description: error instanceof Error ? error.message : "请重试。",
-        duration: 4000, // 错误信息显示更久
+      toast.error("❌ Failed to pick bottle", {
+        description: error instanceof Error ? error.message : "Please try again.",
+        duration: 4000, // Show errors longer
       });
     } finally {
       setIsPicking(false);
@@ -257,11 +257,11 @@ export function MessageInBottleAppComponent({
           <div className="flex items-center gap-2">
             <span className="text-2xl">🫙</span>
             <h2 className="text-lg font-semibold" style={{ color: '#1e3a8a' }}>
-              漂流瓶
+              DriftBottle
             </h2>
           </div>
           <p className="text-sm mt-1" style={{ color: '#1e40af' }}>
-            把你的消息扔进大海，或者从海洋中捡起一个瓶子
+            Throw your message into the sea, or pick up a bottle from the ocean
           </p>
         </div>
 
@@ -270,14 +270,14 @@ export function MessageInBottleAppComponent({
           {/* Throw Bottle Section */}
           <div className="bg-white rounded-lg p-4 shadow-sm border border-blue-200">
             <label className="block text-sm font-medium mb-2" style={{ color: '#374151' }}>
-              扔一个瓶子
+              Throw a Bottle
             </label>
             <div className="flex gap-2">
               <Input
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder="写下你的消息..."
+                placeholder="Write your message..."
                 maxLength={1000}
                 className="flex-1"
                 disabled={isThrowing}
@@ -304,11 +304,11 @@ export function MessageInBottleAppComponent({
             <div className="p-4 border-b border-blue-200 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <h3 className="text-sm font-medium" style={{ color: '#374151' }}>
-                  捡起一个瓶子
+                  Pick Up a Bottle
                 </h3>
                 {bottleCount !== null && (
                   <span className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-700">
-                    海里有 {bottleCount} {bottleCount === 1 ? '个' : '个'}瓶子
+                    {bottleCount} {bottleCount === 1 ? 'bottle' : 'bottles'} in sea
                   </span>
                 )}
               </div>
@@ -321,12 +321,12 @@ export function MessageInBottleAppComponent({
                 {isPicking ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    正在打捞...
+                    Fishing...
                   </>
                 ) : (
                   <>
                     <Waves className="w-4 h-4 mr-2" />
-                    撒网
+                    Cast Net
                   </>
                 )}
               </Button>
@@ -356,8 +356,8 @@ export function MessageInBottleAppComponent({
                     <Waves className="w-12 h-12 mb-4 opacity-50" />
                     <p className="text-sm">
                       {isPicking
-                        ? "正在打捞瓶子..."
-                        : "点击「撒网」从大海中捡起一个瓶子"}
+                        ? "Fishing for a bottle..."
+                        : "Click 'Cast Net' to pick up a bottle from the sea"}
                     </p>
                   </div>
                 )}
