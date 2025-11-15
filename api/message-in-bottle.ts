@@ -9,22 +9,45 @@ export const config = {
   runtime: "nodejs",
 };
 
-// CORS helper
-const getEffectiveOrigin = (req: Request): string | null => {
-  const origin = req.headers.get("origin");
-  const allowedOrigins = [
-    "http://localhost:5173",
-    "http://localhost:4173",
-    "https://os.ryo.lu",
-    "https://os.nora-he.com",
-    "https://nora-he.com",
-    "https://www.nora-he.com",
-    "https://ryos.vercel.app",
-  ];
-  if (origin && allowedOrigins.includes(origin)) {
-    return origin;
+// CORS helper - supports both Edge Runtime (Request) and Node.js Runtime (IncomingMessage)
+const getEffectiveOrigin = (req: Request | any): string | null => {
+  // Handle Edge Runtime (Request object)
+  if (req && typeof req.headers?.get === "function") {
+    const origin = req.headers.get("origin");
+    const allowedOrigins = [
+      "http://localhost:5173",
+      "http://localhost:4173",
+      "https://os.ryo.lu",
+      "https://os.nora-he.com",
+      "https://nora-he.com",
+      "https://www.nora-he.com",
+      "https://ryos.vercel.app",
+    ];
+    if (origin && allowedOrigins.includes(origin)) {
+      return origin;
+    }
+    return allowedOrigins[0] || null;
   }
-  return allowedOrigins[0] || null;
+  
+  // Handle Node.js Runtime (IncomingMessage object)
+  if (req && req.headers) {
+    const origin = req.headers.origin || req.headers.Origin;
+    const allowedOrigins = [
+      "http://localhost:5173",
+      "http://localhost:4173",
+      "https://os.ryo.lu",
+      "https://os.nora-he.com",
+      "https://nora-he.com",
+      "https://www.nora-he.com",
+      "https://ryos.vercel.app",
+    ];
+    if (origin && allowedOrigins.includes(origin)) {
+      return origin;
+    }
+    return allowedOrigins[0] || null;
+  }
+  
+  return null;
 };
 
 const jsonResponse = (
@@ -121,10 +144,12 @@ function getRedis(): Redis {
   return redisInstance;
 }
 
-export default async function handler(req: Request): Promise<Response> {
+export default async function handler(req: Request | any, res?: any): Promise<Response> {
+  // Handle both Edge Runtime (Request) and Node.js Runtime (IncomingMessage)
+  const method = req.method || req.method;
   const effectiveOrigin = getEffectiveOrigin(req);
 
-  if (req.method === "OPTIONS") {
+  if (method === "OPTIONS") {
     return jsonResponse({}, 200, effectiveOrigin);
   }
 
@@ -154,7 +179,18 @@ export default async function handler(req: Request): Promise<Response> {
     if (req.method === "POST") {
       let body;
       try {
-        body = await req.json();
+        // Handle both Edge Runtime (Request.json()) and Node.js Runtime (stream)
+        if (typeof req.json === "function") {
+          body = await req.json();
+        } else {
+          // Node.js Runtime - read from stream
+          const chunks: Uint8Array[] = [];
+          for await (const chunk of req) {
+            chunks.push(chunk);
+          }
+          const buffer = Buffer.concat(chunks);
+          body = JSON.parse(buffer.toString());
+        }
       } catch (parseError) {
         console.error("[message-in-bottle] Failed to parse request body:", parseError);
         return jsonResponse(
@@ -223,7 +259,7 @@ export default async function handler(req: Request): Promise<Response> {
     }
 
     // Pick up a bottle (GET)
-    if (req.method === "GET") {
+    if (method === "GET") {
       try {
         // Get total count
         const count = await redis.llen(BOTTLES_KEY);
