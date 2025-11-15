@@ -55,8 +55,8 @@ export function MessageInBottleAppComponent({
   useEffect(() => {
     if (bottleThrownEvent) {
       // Show notification when someone throws a bottle
-      toast.info("🌊 New bottle in the sea!", {
-        description: "Someone just threw a bottle into the ocean.",
+      toast.info("🌊 海里出现新瓶子！", {
+        description: "有人刚刚向大海扔了一个瓶子。",
         duration: 3000,
       });
     }
@@ -162,8 +162,8 @@ export function MessageInBottleAppComponent({
       if (!response.ok) {
         const errorData = await response.json();
         if (response.status === 404) {
-          toast.info("The sea is empty 🌊", {
-            description: "Be the first to throw a bottle!",
+          toast.info("🌊 大海是空的", {
+            description: "成为第一个扔瓶子的人吧！",
           });
           setBottleCount(0);
           return;
@@ -257,11 +257,11 @@ export function MessageInBottleAppComponent({
           <div className="flex items-center gap-2">
             <span className="text-2xl">🫙</span>
             <h2 className="text-lg font-semibold" style={{ color: '#1e3a8a' }}>
-              DriftBottle
+              漂流瓶
             </h2>
           </div>
           <p className="text-sm mt-1" style={{ color: '#1e40af' }}>
-            Throw your message into the sea, or pick up a bottle from the ocean
+            把你的消息扔进大海，或者从海洋中捡起一个瓶子
           </p>
         </div>
 
@@ -270,14 +270,14 @@ export function MessageInBottleAppComponent({
           {/* Throw Bottle Section */}
           <div className="bg-white rounded-lg p-4 shadow-sm border border-blue-200">
             <label className="block text-sm font-medium mb-2" style={{ color: '#374151' }}>
-              Throw a Bottle
+              扔一个瓶子
             </label>
             <div className="flex gap-2">
               <Input
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder="Write your message..."
+                placeholder="写下你的消息..."
                 maxLength={1000}
                 className="flex-1"
                 disabled={isThrowing}
@@ -304,11 +304,11 @@ export function MessageInBottleAppComponent({
             <div className="p-4 border-b border-blue-200 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <h3 className="text-sm font-medium" style={{ color: '#374151' }}>
-                  Pick Up a Bottle
+                  捡起一个瓶子
                 </h3>
                 {bottleCount !== null && (
                   <span className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-700">
-                    {bottleCount} {bottleCount === 1 ? 'bottle' : 'bottles'} in sea
+                    海里有 {bottleCount} {bottleCount === 1 ? '个' : '个'}瓶子
                   </span>
                 )}
               </div>
@@ -321,12 +321,12 @@ export function MessageInBottleAppComponent({
                 {isPicking ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Fishing...
+                    正在打捞...
                   </>
                 ) : (
                   <>
                     <Waves className="w-4 h-4 mr-2" />
-                    Cast Net
+                    撒网
                   </>
                 )}
               </Button>
@@ -356,8 +356,8 @@ export function MessageInBottleAppComponent({
                     <Waves className="w-12 h-12 mb-4 opacity-50" />
                     <p className="text-sm">
                       {isPicking
-                        ? "Fishing for a bottle..."
-                        : "Click 'Cast Net' to pick up a bottle from the sea"}
+                        ? "正在打捞瓶子..."
+                        : "点击「撒网」从大海中捡起一个瓶子"}
                     </p>
                   </div>
                 )}
