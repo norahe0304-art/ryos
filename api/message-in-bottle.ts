@@ -62,9 +62,13 @@ export default async function handler(req: Request): Promise<Response> {
 
   // Check Redis environment variables (supports both naming conventions)
   // First, log all environment variables that contain REDIS or UPSTASH
+  const allEnvKeys = Object.keys(process.env);
   console.log("[message-in-bottle] Environment check:");
-  console.log("[message-in-bottle] All env vars with REDIS:", Object.keys(process.env).filter(k => k.includes('REDIS')));
-  console.log("[message-in-bottle] All env vars with UPSTASH:", Object.keys(process.env).filter(k => k.includes('UPSTASH')));
+  console.log("[message-in-bottle] Total env vars:", allEnvKeys.length);
+  console.log("[message-in-bottle] All env vars with REDIS:", allEnvKeys.filter(k => k.includes('REDIS')));
+  console.log("[message-in-bottle] All env vars with UPSTASH:", allEnvKeys.filter(k => k.includes('UPSTASH')));
+  console.log("[message-in-bottle] Sample env var names (first 20):", allEnvKeys.slice(0, 20));
+  console.log("[message-in-bottle] All env var names (full list):", allEnvKeys.sort().join(", "));
   console.log("[message-in-bottle] VERCEL_ENV:", process.env.VERCEL_ENV);
   console.log("[message-in-bottle] NODE_ENV:", process.env.NODE_ENV);
   
