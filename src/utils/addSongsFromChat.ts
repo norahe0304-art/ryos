@@ -1,7 +1,6 @@
 import { extractYoutubeUrls } from './extractYoutubeUrls';
 import { useChatsStore } from '@/stores/useChatsStore';
 import { useIpodStore } from '@/stores/useIpodStore';
-import type { AIChatMessage } from '@/types/chat';
 
 /**
  * Extract YouTube URLs from chat messages and add them to iPod
@@ -9,7 +8,31 @@ import type { AIChatMessage } from '@/types/chat';
  */
 export async function addSongsFromChatHistory(): Promise<Array<{ title: string; artist?: string }>> {
   const { aiMessages } = useChatsStore.getState();
-  const urls = extractYoutubeUrls(aiMessages);
+  // Convert AIChatMessage[] (UIMessage[]) to the format expected by extractYoutubeUrls
+  // UIMessage uses parts array with type "text" for text content
+  const messagesForExtraction = aiMessages.map(msg => {
+    const result: { content?: string; text?: string; parts?: Array<{ text?: string }> } = {};
+    
+    // Extract text from parts array (AI SDK v5 format)
+    if (Array.isArray(msg.parts)) {
+      const textParts = msg.parts
+        .filter(p => 
+          typeof p === 'object' && p !== null && 'type' in p && (p as { type: string }).type === 'text'
+        )
+        .map(p => {
+          const part = p as { type: string; text?: string };
+          return { text: part.text || '' };
+        })
+        .filter(p => p.text);
+      
+      if (textParts.length > 0) {
+        result.parts = textParts;
+      }
+    }
+    
+    return result;
+  });
+  const urls = extractYoutubeUrls(messagesForExtraction);
   
   if (urls.length === 0) {
     return [];

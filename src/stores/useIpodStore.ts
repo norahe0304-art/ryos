@@ -632,7 +632,6 @@ export const useIpodStore = create<IpodState>()(
         let authorName: string | undefined = undefined; // Store author_name
 
         // Try to use Chrome MCP to fetch page info first
-        let useChromeMCP = false;
         try {
           // Check if Chrome MCP is available (via window or global)
           // Chrome MCP tools are typically available through MCP server
