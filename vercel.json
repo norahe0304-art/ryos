@@ -194,7 +194,7 @@
   "redirects": [{ "source": "/404", "destination": "/", "permanent": false }],
   "functions": {
     "api/message-in-bottle.ts": {
-      "maxDuration": 30
+      "maxDuration": 60
     }
   }
 }

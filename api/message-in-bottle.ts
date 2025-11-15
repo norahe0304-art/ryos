@@ -4,10 +4,10 @@ import { getRedisConfig } from "./utils/redis-config.js";
 // Vercel Function configuration
 // Using Node.js runtime instead of Edge to ensure environment variables are accessible
 export const runtime = "nodejs";
-export const maxDuration = 30; // Increased to 30 seconds to allow for Redis operations
+export const maxDuration = 60; // Increased to 60 seconds (max for Hobby plan) to allow for slow Redis operations
 export const config = {
   runtime: "nodejs",
-  maxDuration: 30,
+  maxDuration: 60,
 };
 
 // CORS helper - supports both Edge Runtime (Request) and Node.js Runtime (IncomingMessage)
@@ -186,18 +186,19 @@ export default async function handler(req: Request | any, res?: any): Promise<Re
       };
 
       try {
-        // Optimize: Push with timeout protection (10 seconds max for Redis operation)
+        // Optimize: Push immediately without timeout protection
+        // Upstash REST API can be slow, but we need to wait for it to complete
         const bottleJson = JSON.stringify(bottle);
+        const startTime = Date.now();
         
-        // Add timeout wrapper to ensure operation completes within 10 seconds
-        const pushPromise = redis.lpush(BOTTLES_KEY, bottleJson);
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error("Redis operation timeout after 10 seconds")), 10000)
-        );
+        // Push to Redis (this is the critical operation)
+        await redis.lpush(BOTTLES_KEY, bottleJson);
         
-        await Promise.race([pushPromise, timeoutPromise]);
+        const pushTime = Date.now() - startTime;
+        console.log(`[message-in-bottle] Redis lpush completed in ${pushTime}ms`);
         
         // Trim asynchronously without waiting (fire and forget for better performance)
+        // Don't await this - let it run in background
         redis.ltrim(BOTTLES_KEY, 0, MAX_BOTTLES - 1).catch(err => {
           console.error("[message-in-bottle] Background trim failed:", err);
         });
