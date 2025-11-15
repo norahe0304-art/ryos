@@ -28,6 +28,7 @@ import {
   AI_LIMIT_PER_5_HOURS,
   } from "./utils/rate-limit.js";
 import { Redis } from "@upstash/redis";
+import { getRedisConfig } from "./utils/redis-config.js";
 
 // Central list of supported theme IDs for tool validation
 const themeIds = ["system7", "macosx", "xp", "win98"] as const;
@@ -362,9 +363,10 @@ const buildContextAwarePrompts = () => {
 };
 
 // Add Redis client for auth validation
+const { url: redisUrl, token: redisToken } = getRedisConfig();
 const redis = new Redis({
-  url: process.env.REDIS_KV_REST_API_URL,
-  token: process.env.REDIS_KV_REST_API_TOKEN,
+  url: redisUrl,
+  token: redisToken,
 });
 
 // Add auth validation function

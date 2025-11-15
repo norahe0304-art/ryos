@@ -1,9 +1,11 @@
 import { Redis } from "@upstash/redis";
+import { getRedisConfig } from "./redis-config.js";
 
 // Set up Redis client
+const { url, token } = getRedisConfig();
 const redis = new Redis({
-  url: process.env.REDIS_KV_REST_API_URL,
-  token: process.env.REDIS_KV_REST_API_TOKEN,
+  url,
+  token,
 });
 
 // Constants for rate limiting

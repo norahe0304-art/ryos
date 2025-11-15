@@ -14,6 +14,7 @@ import {
 } from "./utils/cors.js";
 import * as RateLimit from "./utils/rate-limit.js";
 import { Redis } from "@upstash/redis";
+import { getRedisConfig } from "./utils/redis-config.js";
 
 export const runtime = "edge";
 export const edge = true;
@@ -398,9 +399,10 @@ export default async function handler(req: Request): Promise<Response> {
   }
 
   // Initialize Redis for auth token validation
+  const { url, token } = getRedisConfig();
   const redis = new Redis({
-    url: process.env.REDIS_KV_REST_API_URL as string,
-    token: process.env.REDIS_KV_REST_API_TOKEN as string,
+    url: url as string,
+    token: token as string,
   });
 
   // Extract auth headers

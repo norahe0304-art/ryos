@@ -59,21 +59,23 @@ export default async function handler(req: Request): Promise<Response> {
     return jsonResponse({}, 200, effectiveOrigin);
   }
 
-  // Check Redis environment variables
-  const redisUrl = process.env.REDIS_KV_REST_API_URL;
-  const redisToken = process.env.REDIS_KV_REST_API_TOKEN;
+  // Check Redis environment variables (supports both naming conventions)
+  const redisUrl = process.env.REDIS_KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
+  const redisToken = process.env.REDIS_KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
 
   if (!redisUrl || !redisToken) {
     console.error("[message-in-bottle] Redis credentials not configured");
-    console.error("[message-in-bottle] REDIS_KV_REST_API_URL:", redisUrl ? "exists" : "missing");
-    console.error("[message-in-bottle] REDIS_KV_REST_API_TOKEN:", redisToken ? "exists" : "missing");
+    console.error("[message-in-bottle] REDIS_KV_REST_API_URL:", process.env.REDIS_KV_REST_API_URL ? "exists" : "missing");
+    console.error("[message-in-bottle] REDIS_KV_REST_API_TOKEN:", process.env.REDIS_KV_REST_API_TOKEN ? "exists" : "missing");
+    console.error("[message-in-bottle] UPSTASH_REDIS_REST_URL:", process.env.UPSTASH_REDIS_REST_URL ? "exists" : "missing");
+    console.error("[message-in-bottle] UPSTASH_REDIS_REST_TOKEN:", process.env.UPSTASH_REDIS_REST_TOKEN ? "exists" : "missing");
     console.error("[message-in-bottle] Available env vars with REDIS:", Object.keys(process.env).filter(k => k.includes('REDIS')));
     
     // Different messages for development vs production
     const isDevelopment = process.env.NODE_ENV === "development" || process.env.VERCEL_ENV === "development";
     const errorMessage = isDevelopment
-      ? "Redis is not configured. Please ensure:\n1. You're using 'vercel dev' (not 'vite dev')\n2. .env file exists in project root\n3. REDIS_KV_REST_API_URL and REDIS_KV_REST_API_TOKEN are set in .env"
-      : "Redis is not configured. Please add REDIS_KV_REST_API_URL and REDIS_KV_REST_API_TOKEN in Vercel Dashboard → Settings → Environment Variables";
+      ? "Redis is not configured. Please ensure:\n1. You're using 'vercel dev' (not 'vite dev')\n2. .env file exists in project root\n3. REDIS_KV_REST_API_URL and REDIS_KV_REST_API_TOKEN (or UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN) are set in .env"
+      : "Redis is not configured. Please add REDIS_KV_REST_API_URL and REDIS_KV_REST_API_TOKEN (or UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN) in Vercel Dashboard → Settings → Environment Variables";
     
     return jsonResponse(
       {

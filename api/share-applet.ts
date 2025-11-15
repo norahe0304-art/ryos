@@ -1,4 +1,5 @@
 import { Redis } from "@upstash/redis";
+import { getRedisConfig } from "./utils/redis-config.js";
 import {
   getEffectiveOrigin,
   isAllowedOrigin,
@@ -87,9 +88,10 @@ export default async function handler(req: Request) {
   }
 
   // Create Redis client inside handler (like lyrics.ts does)
+  const { url, token } = getRedisConfig();
   const redis = new Redis({
-    url: process.env.REDIS_KV_REST_API_URL as string,
-    token: process.env.REDIS_KV_REST_API_TOKEN as string,
+    url: url as string,
+    token: token as string,
   });
 
   // Parse and validate request

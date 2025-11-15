@@ -1,4 +1,5 @@
 import { Redis } from "@upstash/redis";
+import { getRedisConfig } from "./utils/redis-config.js";
 // Using leo-profanity exclusively for profanity detection/cleaning
 import Pusher from "pusher";
 import crypto from "crypto";
@@ -60,9 +61,10 @@ const isProfaneUsername = (name) => {
 };
 
 // Set up Redis client
+const { url, token } = getRedisConfig();
 const redis = new Redis({
-  url: process.env.REDIS_KV_REST_API_URL,
-  token: process.env.REDIS_KV_REST_API_TOKEN,
+  url,
+  token,
 });
 
 // Initialize Pusher

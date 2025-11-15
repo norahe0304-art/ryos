@@ -1,6 +1,7 @@
 // No Next.js types needed – omit unused import to keep file framework‑agnostic.
 
 import { Redis } from "@upstash/redis"; // Use direct import
+import { getRedisConfig } from "./utils/redis-config.js";
 import * as RateLimit from "./utils/rate-limit.js";
 import { getEffectiveOrigin, isAllowedOrigin } from "./utils/cors.js";
 
@@ -335,9 +336,10 @@ export default async function handler(req: Request) {
     }
 
     try {
+      const { url, token } = getRedisConfig();
       const redis = new Redis({
-        url: process.env.REDIS_KV_REST_API_URL as string,
-        token: process.env.REDIS_KV_REST_API_TOKEN as string,
+        url: url as string,
+        token: token as string,
       });
       const key = `${IE_CACHE_PREFIX}${encodeURIComponent(
         normalizedUrlForKey
@@ -390,9 +392,10 @@ export default async function handler(req: Request) {
     }
 
     try {
+      const { url, token } = getRedisConfig();
       const redis = new Redis({
-        url: process.env.REDIS_KV_REST_API_URL as string,
-        token: process.env.REDIS_KV_REST_API_TOKEN as string,
+        url: url as string,
+        token: token as string,
       });
 
       const uniqueYears = new Set<string>();
@@ -573,8 +576,8 @@ export default async function handler(req: Request) {
         `Initializing Wayback cache check for ${normalizedUrl} (${waybackYear}/${waybackMonth})`
       );
       const redis = new Redis({
-        url: process.env.REDIS_KV_REST_API_URL as string,
-        token: process.env.REDIS_KV_REST_API_TOKEN as string,
+        url: (getRedisConfig().url) as string,
+        token: (getRedisConfig().token) as string,
       });
       const normalizedUrlForKey = normalizeUrlForCacheKey(normalizedUrl);
       if (normalizedUrlForKey) {
@@ -931,9 +934,10 @@ export default async function handler(req: Request) {
               requestId,
               `Attempting to cache Wayback content for ${normalizedUrl} (${waybackYear}/${waybackMonth})`
             );
+            const { url, token } = getRedisConfig();
             const redis = new Redis({
-              url: process.env.REDIS_KV_REST_API_URL as string,
-              token: process.env.REDIS_KV_REST_API_TOKEN as string,
+              url: url as string,
+              token: token as string,
             });
             const normalizedUrlForKey = normalizeUrlForCacheKey(normalizedUrl);
             if (normalizedUrlForKey) {

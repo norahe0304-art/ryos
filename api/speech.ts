@@ -3,6 +3,7 @@ import { openai } from "@ai-sdk/openai";
 import { getEffectiveOrigin, isAllowedOrigin, preflightIfNeeded } from "./utils/cors.js";
 import * as RateLimit from "./utils/rate-limit.js";
 import { Redis } from "@upstash/redis";
+import { getRedisConfig } from "./utils/redis-config.js";
 
 // --- Default Configuration -----------------------------------------------
 
@@ -47,9 +48,10 @@ const generateRequestId = (): string =>
   Math.random().toString(36).substring(2, 10);
 
 // Redis client setup
+const { url, token } = getRedisConfig();
 const redis = new Redis({
-  url: process.env.REDIS_KV_REST_API_URL,
-  token: process.env.REDIS_KV_REST_API_TOKEN,
+  url,
+  token,
 });
 
 // Authentication constants

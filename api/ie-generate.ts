@@ -17,6 +17,7 @@ import {
   getModelInstance,
   } from "./utils/aiModels.js";
 import { Redis } from "@upstash/redis";
+import { getRedisConfig } from "./utils/redis-config.js";
 import { normalizeUrlForCacheKey } from "./utils/url.js";
 import {
   CORE_PRIORITY_INSTRUCTIONS,
@@ -29,9 +30,10 @@ import { SUPPORTED_AI_MODELS } from "../src/types/aiModels.js";
 
 // After ALLOWED_ORIGINS const block, add Redis setup and cache prefix
 
+const { url, token } = getRedisConfig();
 const redis = new Redis({
-  url: process.env.REDIS_KV_REST_API_URL as string,
-  token: process.env.REDIS_KV_REST_API_TOKEN as string,
+  url: url as string,
+  token: token as string,
 });
 
 const IE_CACHE_PREFIX = "ie:cache:"; // Key prefix for stored generated pages
