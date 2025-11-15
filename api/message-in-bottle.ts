@@ -10,45 +10,22 @@ export const config = {
   maxDuration: 60,
 };
 
-// CORS helper - supports both Edge Runtime (Request) and Node.js Runtime (IncomingMessage)
-const getEffectiveOrigin = (req: Request | any): string | null => {
-  // Handle Edge Runtime (Request object)
-  if (req && typeof req.headers?.get === "function") {
-    const origin = req.headers.get("origin");
-    const allowedOrigins = [
-      "http://localhost:5173",
-      "http://localhost:4173",
-      "https://os.ryo.lu",
-      "https://os.nora-he.com",
-      "https://nora-he.com",
-      "https://www.nora-he.com",
-      "https://ryos.vercel.app",
-    ];
-    if (origin && allowedOrigins.includes(origin)) {
-      return origin;
-    }
-    return allowedOrigins[0] || null;
+// CORS helper - standard Request object
+const getEffectiveOrigin = (req: Request): string | null => {
+  const origin = req.headers.get("origin");
+  const allowedOrigins = [
+    "http://localhost:5173",
+    "http://localhost:4173",
+    "https://os.ryo.lu",
+    "https://os.nora-he.com",
+    "https://nora-he.com",
+    "https://www.nora-he.com",
+    "https://ryos.vercel.app",
+  ];
+  if (origin && allowedOrigins.includes(origin)) {
+    return origin;
   }
-  
-  // Handle Node.js Runtime (IncomingMessage object)
-  if (req && req.headers) {
-    const origin = req.headers.origin || req.headers.Origin;
-    const allowedOrigins = [
-      "http://localhost:5173",
-      "http://localhost:4173",
-      "https://os.ryo.lu",
-      "https://os.nora-he.com",
-      "https://nora-he.com",
-      "https://www.nora-he.com",
-      "https://ryos.vercel.app",
-    ];
-    if (origin && allowedOrigins.includes(origin)) {
-      return origin;
-    }
-    return allowedOrigins[0] || null;
-  }
-  
-  return null;
+  return allowedOrigins[0] || null;
 };
 
 const jsonResponse = (
