@@ -59,10 +59,31 @@ let redisInstance: Redis | null = null;
 
 function getRedis(): Redis {
   if (!redisInstance) {
-    const { url: redisUrl, token: redisToken } = getRedisConfig();
+    // Debug: Check environment variables directly
+    const directUrl = process.env.REDIS_KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
+    const directToken = process.env.REDIS_KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
+    
+    console.log("[message-in-bottle] Direct env check in getRedis():");
+    console.log("[message-in-bottle] REDIS_KV_REST_API_URL:", directUrl ? "exists" : "missing");
+    console.log("[message-in-bottle] REDIS_KV_REST_API_TOKEN:", directToken ? "exists" : "missing");
+    console.log("[message-in-bottle] process.env keys count:", Object.keys(process.env).length);
+    
+    // Try getRedisConfig first
+    const config = getRedisConfig();
+    console.log("[message-in-bottle] getRedisConfig() result:", {
+      url: config.url ? "exists" : "missing",
+      token: config.token ? "exists" : "missing",
+    });
+    
+    // Use direct access if getRedisConfig fails
+    const redisUrl = config.url || directUrl;
+    const redisToken = config.token || directToken;
+    
     if (!redisUrl || !redisToken) {
+      console.error("[message-in-bottle] All methods failed to get Redis config");
       throw new Error("Redis configuration not available. Please check environment variables.");
     }
+    
     redisInstance = new Redis({
       url: redisUrl,
       token: redisToken,
