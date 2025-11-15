@@ -195,6 +195,9 @@
   "functions": {
     "api/message-in-bottle.ts": {
       "maxDuration": 60
+    },
+    "api/pusher-beams.ts": {
+      "maxDuration": 30
     }
   }
 }

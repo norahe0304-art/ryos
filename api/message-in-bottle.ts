@@ -1,5 +1,6 @@
 import { Redis } from "@upstash/redis";
 import { getRedisConfig } from "./utils/redis-config.js";
+import { sendPusherRealtimeEvent } from "./utils/pusherRealtime.js";
 
 // Vercel Function configuration
 // Using Node.js runtime instead of Edge to ensure environment variables are accessible
@@ -156,8 +157,6 @@ export default async function handler(req: Request): Promise<Response> {
       };
 
       try {
-        // Optimize: Push immediately without timeout protection
-        // Upstash REST API can be slow, but we need to wait for it to complete
         const bottleJson = JSON.stringify(bottle);
         const startTime = Date.now();
         
@@ -171,6 +170,37 @@ export default async function handler(req: Request): Promise<Response> {
         // Don't await this - let it run in background
         redis.ltrim(BOTTLES_KEY, 0, MAX_BOTTLES - 1).catch(err => {
           console.error("[message-in-bottle] Background trim failed:", err);
+        });
+
+        // Send Pusher real-time event for new bottle (fire and forget for better performance)
+        // This allows other users to see new bottles immediately
+        sendPusherRealtimeEvent({
+          channel: "public-bottles",
+          event: "bottle-thrown",
+          data: {
+            bottle: {
+              id: bottle.id,
+              message: bottle.message,
+              timestamp: bottle.timestamp,
+            },
+          },
+          silent: true, // Don't throw errors if Pusher fails
+        }).catch(err => {
+          console.error("[message-in-bottle] Pusher event failed (non-blocking):", err);
+        });
+
+        // Also send count update
+        redis.llen(BOTTLES_KEY).then(count => {
+          sendPusherRealtimeEvent({
+            channel: "public-bottles",
+            event: "bottle-count-updated",
+            data: { count },
+            silent: true,
+          }).catch(() => {
+            // Ignore errors
+          });
+        }).catch(() => {
+          // Ignore errors
         });
 
         return jsonResponse(
@@ -197,8 +227,39 @@ export default async function handler(req: Request): Promise<Response> {
       }
     }
 
-    // Pick up a bottle (GET)
+    // Pick up a bottle (GET) or get count (GET ?count=true)
     if (method === "GET") {
+      // Parse query parameters from URL
+      const urlString = req.url || "";
+      const urlMatch = urlString.match(/\?([^#]*)/);
+      const searchParams = new URLSearchParams(urlMatch ? urlMatch[1] : "");
+      const countOnly = searchParams.get("count") === "true";
+
+      // If only count is requested, return count quickly
+      if (countOnly) {
+        try {
+          const count = await redis.llen(BOTTLES_KEY);
+          return jsonResponse(
+            {
+              success: true,
+              count,
+            },
+            200,
+            effectiveOrigin
+          );
+        } catch (redisError) {
+          console.error("[message-in-bottle] Redis error when getting count:", redisError);
+          return jsonResponse(
+            {
+              error: "Failed to get count",
+              message: redisError instanceof Error ? redisError.message : "Database error occurred",
+            },
+            500,
+            effectiveOrigin
+          );
+        }
+      }
+
       const getStartTime = Date.now();
       try {
         // Get total count with timeout protection
@@ -289,6 +350,34 @@ export default async function handler(req: Request): Promise<Response> {
 
         const totalGetTime = Date.now() - getStartTime;
         console.log(`[message-in-bottle] Bottle picked up: ${bottle.id}, total time: ${totalGetTime}ms`);
+
+        // Send Pusher event for bottle picked up (fire and forget)
+        // This allows other users to see that a bottle was picked up
+        sendPusherRealtimeEvent({
+          channel: "public-bottles",
+          event: "bottle-picked",
+          data: {
+            bottleId: bottle.id,
+            remainingCount: count - 1,
+          },
+          silent: true,
+        }).catch(err => {
+          console.error("[message-in-bottle] Pusher event failed (non-blocking):", err);
+        });
+
+        // Update count asynchronously
+        redis.llen(BOTTLES_KEY).then(newCount => {
+          sendPusherRealtimeEvent({
+            channel: "public-bottles",
+            event: "bottle-count-updated",
+            data: { count: newCount },
+            silent: true,
+          }).catch(() => {
+            // Ignore errors
+          });
+        }).catch(() => {
+          // Ignore errors
+        });
 
         // Return response immediately
         const response = jsonResponse(

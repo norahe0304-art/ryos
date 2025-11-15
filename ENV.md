@@ -68,6 +68,19 @@ PUSHER_CLUSTER=us2
 
 获取方式：访问 [Pusher Dashboard](https://dashboard.pusher.com/) 创建应用并获取凭证。
 
+#### Pusher Beams 配置
+用于推送通知功能。
+
+```bash
+PUSHER_BEAMS_SECRET_KEY=your_pusher_beams_secret_key_here
+```
+
+获取方式：
+1. 访问 [Pusher Dashboard](https://dashboard.pusher.com/)
+2. 选择你的 Beams 实例
+3. 进入 "Credentials" 标签页
+4. 复制 "Secret Key"
+
 ## 配置方法
 
 ### 本地开发
@@ -126,6 +139,7 @@ REDIS_KV_REST_API_TOKEN=AX...
 - `api/chat-rooms.js` - 使用 `REDIS_KV_REST_API_URL`, `REDIS_KV_REST_API_TOKEN`, `PUSHER_APP_ID`, `PUSHER_KEY`, `PUSHER_SECRET`, `PUSHER_CLUSTER`
 - `api/chat-room-ai.ts` - 使用 `GOOGLE_GENERATIVE_AI_API_KEY`
 - `api/message-in-bottle.ts` - 使用 `REDIS_KV_REST_API_URL`, `REDIS_KV_REST_API_TOKEN`
+- `api/pusher-beams.ts` - 使用 `PUSHER_BEAMS_SECRET_KEY`
 - `api/applet-ai.ts` - 使用 `GOOGLE_GENERATIVE_AI_API_KEY`, `REDIS_KV_REST_API_URL`, `REDIS_KV_REST_API_TOKEN`
 - `api/lyrics.ts` - 使用 `REDIS_KV_REST_API_URL`, `REDIS_KV_REST_API_TOKEN`
 - `api/translate-lyrics.ts` - 使用 `REDIS_KV_REST_API_URL`, `REDIS_KV_REST_API_TOKEN`

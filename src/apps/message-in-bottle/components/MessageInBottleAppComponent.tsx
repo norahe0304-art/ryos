@@ -10,6 +10,7 @@ import { Send, Waves, Loader2 } from "lucide-react";
 import { MessageInBottleMenuBar } from "./MessageInBottleMenuBar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
+import { usePusherRealtime } from "@/hooks/usePusherRealtime";
 
 interface Bottle {
   id: string;
@@ -30,7 +31,43 @@ export function MessageInBottleAppComponent({
   const [isPicking, setIsPicking] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
+  const [bottleCount, setBottleCount] = useState<number | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+
+  // Subscribe to real-time bottle events
+  const { data: bottleThrownEvent } = usePusherRealtime<{
+    bottle: Bottle;
+  }>({
+    channel: "public-bottles",
+    event: "bottle-thrown",
+    enabled: isWindowOpen,
+  });
+
+  const { data: bottleCountEvent } = usePusherRealtime<{
+    count: number;
+  }>({
+    channel: "public-bottles",
+    event: "bottle-count-updated",
+    enabled: isWindowOpen,
+  });
+
+  // Handle real-time bottle thrown event
+  useEffect(() => {
+    if (bottleThrownEvent) {
+      // Show notification when someone throws a bottle
+      toast.info("🌊 New bottle in the sea!", {
+        description: "Someone just threw a bottle into the ocean.",
+        duration: 3000,
+      });
+    }
+  }, [bottleThrownEvent]);
+
+  // Handle real-time bottle count update
+  useEffect(() => {
+    if (bottleCountEvent) {
+      setBottleCount(bottleCountEvent.count);
+    }
+  }, [bottleCountEvent]);
 
   const formatTime = (timestamp: number) => {
     const date = new Date(timestamp);
@@ -54,20 +91,27 @@ export function MessageInBottleAppComponent({
   const throwBottle = useCallback(async () => {
     if (!message.trim() || isThrowing) return;
 
+    const messageToSend = message.trim();
+    
+    // Optimistic update: clear message immediately for better UX
+    setMessage("");
     setIsThrowing(true);
+
     try {
       const response = await fetch("/api/message-in-bottle", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ message: message.trim() }),
+        body: JSON.stringify({ message: messageToSend }),
       });
 
       // Read response as text first (can only read once)
       const responseText = await response.text();
 
       if (!response.ok) {
+        // Restore message on error
+        setMessage(messageToSend);
         let errorMessage = "Failed to throw bottle";
         try {
           const errorData = JSON.parse(responseText);
@@ -88,8 +132,8 @@ export function MessageInBottleAppComponent({
         // If response is empty or invalid JSON, that's okay - we still succeeded
       }
 
-      setMessage("");
-      toast.success("Bottle thrown into the sea!", {
+      // Success - message already cleared, show success toast
+      toast.success("Bottle thrown into the sea! 🌊", {
         description: "Your message is now floating in the ocean.",
       });
     } catch (error) {
@@ -108,6 +152,7 @@ export function MessageInBottleAppComponent({
     setIsPicking(true);
     setCurrentBottle(null);
     try {
+      const startTime = Date.now();
       const response = await fetch("/api/message-in-bottle", {
         method: "GET",
       });
@@ -115,18 +160,27 @@ export function MessageInBottleAppComponent({
       if (!response.ok) {
         const errorData = await response.json();
         if (response.status === 404) {
-          toast.info("The sea is empty", {
+          toast.info("The sea is empty 🌊", {
             description: "Be the first to throw a bottle!",
           });
+          setBottleCount(0);
           return;
         }
         throw new Error(errorData.message || errorData.error || "Failed to pick bottle");
       }
 
       const data = await response.json();
+      const fetchTime = Date.now() - startTime;
+      
       setCurrentBottle(data.bottle);
-      toast.success("Bottle picked up!", {
-        description: "You found a message from the sea.",
+      
+      // Update count optimistically
+      if (bottleCount !== null && bottleCount > 0) {
+        setBottleCount(bottleCount - 1);
+      }
+      
+      toast.success("Bottle picked up! 🎣", {
+        description: `You found a message from the sea. (${fetchTime}ms)`,
       });
     } catch (error) {
       console.error("Error picking bottle:", error);
@@ -136,7 +190,7 @@ export function MessageInBottleAppComponent({
     } finally {
       setIsPicking(false);
     }
-  }, [isPicking]);
+  }, [isPicking, bottleCount]);
 
   const handleKeyPress = useCallback(
     (e: React.KeyboardEvent) => {
@@ -153,6 +207,24 @@ export function MessageInBottleAppComponent({
       scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
     }
   }, [currentBottle]);
+
+  // Fetch initial bottle count on mount
+  useEffect(() => {
+    if (!isWindowOpen) return;
+
+    // Fetch initial count
+    fetch("/api/message-in-bottle?count=true")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && typeof data.count === "number") {
+          setBottleCount(data.count);
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to fetch initial bottle count:", err);
+        // Silently fail - we'll get updates via Pusher
+      });
+  }, [isWindowOpen]);
 
   if (!isWindowOpen) return null;
 
@@ -226,9 +298,16 @@ export function MessageInBottleAppComponent({
           {/* Pick Bottle Section */}
           <div className="flex-1 flex flex-col bg-white rounded-lg shadow-sm border border-blue-200 overflow-hidden">
             <div className="p-4 border-b border-blue-200 flex items-center justify-between">
-              <h3 className="text-sm font-medium" style={{ color: '#374151' }}>
-                Pick Up a Bottle
-              </h3>
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-medium" style={{ color: '#374151' }}>
+                  Pick Up a Bottle
+                </h3>
+                {bottleCount !== null && (
+                  <span className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-700">
+                    {bottleCount} {bottleCount === 1 ? 'bottle' : 'bottles'} in sea
+                  </span>
+                )}
+              </div>
               <Button
                 onClick={pickBottle}
                 disabled={isPicking}
