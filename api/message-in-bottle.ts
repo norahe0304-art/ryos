@@ -105,8 +105,22 @@ function getRedis(): Redis {
     
     // Check if GOOGLE_GENERATIVE_AI_API_KEY exists (to verify env vars are working)
     console.log("[message-in-bottle] GOOGLE_GENERATIVE_AI_API_KEY exists:", !!process.env.GOOGLE_GENERATIVE_AI_API_KEY);
+    console.log("[message-in-bottle] GOOGLE_GENERATIVE_AI_API_KEY value length:", process.env.GOOGLE_GENERATIVE_AI_API_KEY?.length || 0);
     console.log("[message-in-bottle] ANTHROPIC_API_KEY exists:", !!process.env.ANTHROPIC_API_KEY);
     console.log("[message-in-bottle] OPENAI_API_KEY exists:", !!process.env.OPENAI_API_KEY);
+    
+    // Try to manually check Redis variables with exact names
+    console.log("[message-in-bottle] Manual check - REDIS_KV_REST_API_URL:", process.env["REDIS_KV_REST_API_URL"] ? "FOUND" : "NOT FOUND");
+    console.log("[message-in-bottle] Manual check - REDIS_KV_REST_API_TOKEN:", process.env["REDIS_KV_REST_API_TOKEN"] ? "FOUND" : "NOT FOUND");
+    console.log("[message-in-bottle] Manual check - UPSTASH_REDIS_REST_URL:", process.env["UPSTASH_REDIS_REST_URL"] ? "FOUND" : "NOT FOUND");
+    console.log("[message-in-bottle] Manual check - UPSTASH_REDIS_REST_TOKEN:", process.env["UPSTASH_REDIS_REST_TOKEN"] ? "FOUND" : "NOT FOUND");
+    
+    // Check if there are any variables that start with REDIS or UPSTASH (case insensitive)
+    const allKeys = Object.keys(process.env);
+    const redisLikeKeys = allKeys.filter(k => 
+      k.toUpperCase().includes("REDIS") || k.toUpperCase().includes("UPSTASH")
+    );
+    console.log("[message-in-bottle] All keys containing REDIS/UPSTASH (case insensitive):", redisLikeKeys);
     
     // Try to access with different case variations
     const variations = [
