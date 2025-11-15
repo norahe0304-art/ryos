@@ -191,5 +191,10 @@
     { "source": "/terminal", "destination": "/" },
     { "source": "/control-panels", "destination": "/" }
   ],
-  "redirects": [{ "source": "/404", "destination": "/", "permanent": false }]
+  "redirects": [{ "source": "/404", "destination": "/", "permanent": false }],
+  "functions": {
+    "api/message-in-bottle.ts": {
+      "maxDuration": 10
+    }
+  }
 }
