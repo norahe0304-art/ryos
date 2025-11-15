@@ -4,9 +4,10 @@ import { getRedisConfig } from "./utils/redis-config.js";
 // Vercel Function configuration
 // Using Node.js runtime instead of Edge to ensure environment variables are accessible
 export const runtime = "nodejs";
-export const maxDuration = 60;
+export const maxDuration = 30; // Reduced from 60 to 30 seconds
 export const config = {
   runtime: "nodejs",
+  maxDuration: 30,
 };
 
 // CORS helper - supports both Edge Runtime (Request) and Node.js Runtime (IncomingMessage)
@@ -257,10 +258,9 @@ export default async function handler(req: Request | any, res?: any): Promise<Re
       };
 
       try {
-        // Add to Redis list
+        // Add to Redis list and trim - execute sequentially for simplicity
+        // Upstash Redis REST API doesn't support traditional pipelines
         await redis.lpush(BOTTLES_KEY, JSON.stringify(bottle));
-
-        // Trim list to keep only MAX_BOTTLES
         await redis.ltrim(BOTTLES_KEY, 0, MAX_BOTTLES - 1);
 
         console.log(`[message-in-bottle] Bottle thrown: ${bottle.id}`);
