@@ -105,6 +105,8 @@ function getRedis(): Redis {
     
     // Check if GOOGLE_GENERATIVE_AI_API_KEY exists (to verify env vars are working)
     console.log("[message-in-bottle] GOOGLE_GENERATIVE_AI_API_KEY exists:", !!process.env.GOOGLE_GENERATIVE_AI_API_KEY);
+    console.log("[message-in-bottle] ANTHROPIC_API_KEY exists:", !!process.env.ANTHROPIC_API_KEY);
+    console.log("[message-in-bottle] OPENAI_API_KEY exists:", !!process.env.OPENAI_API_KEY);
     
     // Try to access with different case variations
     const variations = [
