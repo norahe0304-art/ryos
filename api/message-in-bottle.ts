@@ -82,36 +82,39 @@ function getRedis(): Redis {
 }
 
 export default async function handler(req: Request): Promise<Response> {
-  // Standard Vercel handler - only accepts Request
-  const method = req.method;
-  const effectiveOrigin = getEffectiveOrigin(req);
-
-  if (method === "OPTIONS") {
-    return jsonResponse({}, 200, effectiveOrigin);
-  }
-
-  // Get Redis client (lazy initialization)
-  let redis: Redis;
+  // Wrap everything in try-catch to ensure we always return a valid JSON response
+  let effectiveOrigin: string | null;
   try {
-    redis = getRedis();
-  } catch (error) {
-    console.error("[message-in-bottle] Failed to initialize Redis:", error);
-    const isDevelopment = process.env.NODE_ENV === "development" || process.env.VERCEL_ENV === "development";
-    const errorMessage = isDevelopment
-      ? "Redis is not configured. Please ensure:\n1. You're using 'vercel dev' (not 'vite dev')\n2. .env file exists in project root\n3. REDIS_KV_REST_API_URL and REDIS_KV_REST_API_TOKEN (or UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN) are set in .env"
-      : "Redis is not configured. Please check:\n1. Vercel Dashboard → Settings → Environment Variables\n2. Ensure REDIS_KV_REST_API_URL and REDIS_KV_REST_API_TOKEN (or UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN) are set for Production, Preview, and Development\n3. Redeploy after adding environment variables";
-    
-    return jsonResponse(
-      {
-        error: "Server configuration error",
-        message: errorMessage,
-      },
-      500,
-      effectiveOrigin
-    );
-  }
+    // Standard Vercel handler - only accepts Request
+    const method = req.method;
+    effectiveOrigin = getEffectiveOrigin(req);
 
-  try {
+    if (method === "OPTIONS") {
+      return jsonResponse({}, 200, effectiveOrigin);
+    }
+
+    // Get Redis client (lazy initialization)
+    let redis: Redis;
+    try {
+      redis = getRedis();
+    } catch (error) {
+      console.error("[message-in-bottle] Failed to initialize Redis:", error);
+      const isDevelopment = process.env.NODE_ENV === "development" || process.env.VERCEL_ENV === "development";
+      const errorMessage = isDevelopment
+        ? "Redis is not configured. Please ensure:\n1. You're using 'vercel dev' (not 'vite dev')\n2. .env file exists in project root\n3. REDIS_KV_REST_API_URL and REDIS_KV_REST_API_TOKEN (or UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN) are set in .env"
+        : "Redis is not configured. Please check:\n1. Vercel Dashboard → Settings → Environment Variables\n2. Ensure REDIS_KV_REST_API_URL and REDIS_KV_REST_API_TOKEN (or UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN) are set for Production, Preview, and Development\n3. Redeploy after adding environment variables";
+      
+      return jsonResponse(
+        {
+          error: "Server configuration error",
+          message: errorMessage,
+        },
+        500,
+        effectiveOrigin
+      );
+    }
+
+    try {
     // Throw a bottle (POST)
     if (method === "POST") {
       let body;
@@ -316,24 +319,51 @@ export default async function handler(req: Request): Promise<Response> {
       }
     }
 
-    return jsonResponse({ error: "Method not allowed" }, 405, effectiveOrigin);
-  } catch (error) {
-    console.error("[message-in-bottle] Unexpected error:", error);
-    if (error instanceof Error) {
-      console.error("[message-in-bottle] Error name:", error.name);
-      console.error("[message-in-bottle] Error message:", error.message);
-      console.error("[message-in-bottle] Error stack:", error.stack);
+        return jsonResponse({ error: "Method not allowed" }, 405, effectiveOrigin);
+      } catch (error) {
+        console.error("[message-in-bottle] Unexpected error:", error);
+        if (error instanceof Error) {
+          console.error("[message-in-bottle] Error name:", error.name);
+          console.error("[message-in-bottle] Error message:", error.message);
+          console.error("[message-in-bottle] Error stack:", error.stack);
+        }
+        return jsonResponse(
+          {
+            error: "Internal server error",
+            message: error instanceof Error ? error.message : "Unknown error occurred",
+            ...(process.env.NODE_ENV === "development" ? {
+              details: error instanceof Error ? error.stack : String(error)
+            } : {})
+          },
+          500,
+          effectiveOrigin
+        );
+      }
+    } catch (outerError) {
+      // Top-level error handler - ensure we always return valid JSON
+      console.error("[message-in-bottle] Top-level error:", outerError);
+      const fallbackOrigin = effectiveOrigin || "https://os.nora-he.com";
+      return jsonResponse(
+        {
+          error: "Internal server error",
+          message: outerError instanceof Error ? outerError.message : "An unexpected error occurred",
+        },
+        500,
+        fallbackOrigin
+      );
     }
-    return jsonResponse(
+  } catch (criticalError) {
+    // Final fallback - if even error handling fails, return minimal JSON
+    console.error("[message-in-bottle] Critical error in handler:", criticalError);
+    return new Response(
+      JSON.stringify({ error: "Internal server error", message: "A server error has occurred" }),
       {
-        error: "Internal server error",
-        message: error instanceof Error ? error.message : "Unknown error occurred",
-        ...(process.env.NODE_ENV === "development" ? {
-          details: error instanceof Error ? error.stack : String(error)
-        } : {})
-      },
-      500,
-      effectiveOrigin
+        status: 500,
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+        },
+      }
     );
   }
 }
