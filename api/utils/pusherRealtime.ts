@@ -10,28 +10,32 @@ let pusherInstance: Pusher | null = null;
 
 /**
  * 获取 Pusher 实例
+ * @returns Pusher 实例，如果配置缺失则返回 null
  */
-export function getPusherInstance(): Pusher {
-  if (!pusherInstance) {
-    const appId = process.env.PUSHER_APP_ID;
-    const key = process.env.PUSHER_KEY;
-    const secret = process.env.PUSHER_SECRET;
-    const cluster = process.env.PUSHER_CLUSTER || "us3";
-
-    if (!appId || !key || !secret) {
-      throw new Error(
-        "Pusher 配置缺失。请设置 PUSHER_APP_ID, PUSHER_KEY, PUSHER_SECRET 环境变量"
-      );
-    }
-
-    pusherInstance = new Pusher({
-      appId,
-      key,
-      secret,
-      cluster,
-      useTLS: true,
-    });
+export function getPusherInstance(): Pusher | null {
+  if (pusherInstance) {
+    return pusherInstance;
   }
+
+  const appId = process.env.PUSHER_APP_ID;
+  const key = process.env.PUSHER_KEY;
+  const secret = process.env.PUSHER_SECRET;
+  const cluster = process.env.PUSHER_CLUSTER || "us3";
+
+  if (!appId || !key || !secret) {
+    console.warn(
+      "[Pusher Realtime] 配置缺失。实时通知功能将不可用。请设置 PUSHER_APP_ID, PUSHER_KEY, PUSHER_SECRET 环境变量"
+    );
+    return null;
+  }
+
+  pusherInstance = new Pusher({
+    appId,
+    key,
+    secret,
+    cluster,
+    useTLS: true,
+  });
 
   return pusherInstance;
 }
@@ -70,6 +74,15 @@ export async function sendPusherRealtimeEvent<T = unknown>(options: {
 
   try {
     const pusher = getPusherInstance();
+    if (!pusher) {
+      // Pusher 未配置，静默返回（不影响主要功能）
+      if (!silent) {
+        console.warn(
+          `[Pusher Realtime] Pusher 未配置，跳过事件发送 - 频道: ${channel}, 事件: ${event}`
+        );
+      }
+      return;
+    }
     await pusher.trigger(channel, event, data);
   } catch (error) {
     if (!silent) {
