@@ -87,8 +87,15 @@ export default async function handler(req: Request): Promise<Response> {
 
   if (!redisUrl || !redisToken) {
     console.error("[message-in-bottle] Redis credentials not configured");
-    console.error("[message-in-bottle] Available env vars with REDIS:", Object.keys(process.env).filter(k => k.includes('REDIS')));
-    console.error("[message-in-bottle] Available env vars with UPSTASH:", Object.keys(process.env).filter(k => k.includes('UPSTASH')));
+    
+    // Log all available environment variables (for debugging)
+    const allEnvKeys = typeof process !== "undefined" && process.env 
+      ? Object.keys(process.env) 
+      : (typeof Deno !== "undefined" && Deno.env ? Array.from(Deno.env.keys()) : []);
+    
+    console.error("[message-in-bottle] Total env vars count:", allEnvKeys.length);
+    console.error("[message-in-bottle] Available env vars with REDIS:", allEnvKeys.filter(k => k.includes('REDIS')));
+    console.error("[message-in-bottle] Available env vars with UPSTASH:", allEnvKeys.filter(k => k.includes('UPSTASH')));
     
     // Log what we actually got from getRedisConfig
     console.error("[message-in-bottle] getRedisConfig returned:", {
@@ -96,6 +103,16 @@ export default async function handler(req: Request): Promise<Response> {
       token: redisToken ? "present" : "missing",
       urlType: typeof redisUrl,
       tokenType: typeof redisToken,
+    });
+    
+    // Log runtime information
+    console.error("[message-in-bottle] Runtime info:", {
+      hasProcess: typeof process !== "undefined",
+      hasProcessEnv: typeof process !== "undefined" && !!process.env,
+      hasDeno: typeof Deno !== "undefined",
+      hasDenoEnv: typeof Deno !== "undefined" && !!Deno.env,
+      vercelEnv: typeof process !== "undefined" ? process.env.VERCEL_ENV : undefined,
+      nodeEnv: typeof process !== "undefined" ? process.env.NODE_ENV : undefined,
     });
     
     // Different messages for development vs production
