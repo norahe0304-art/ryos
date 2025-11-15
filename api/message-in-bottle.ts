@@ -100,8 +100,8 @@ export default async function handler(req: Request): Promise<Response> {
           : []);
     
     console.error("[message-in-bottle] Total env vars count:", allEnvKeys.length);
-    console.error("[message-in-bottle] Available env vars with REDIS:", allEnvKeys.filter((k: string) => k.includes('REDIS')));
-    console.error("[message-in-bottle] Available env vars with UPSTASH:", allEnvKeys.filter((k: string) => k.includes('UPSTASH')));
+    console.error("[message-in-bottle] Available env vars with REDIS:", allEnvKeys.filter((k: unknown) => typeof k === 'string' && k.includes('REDIS')));
+    console.error("[message-in-bottle] Available env vars with UPSTASH:", allEnvKeys.filter((k: unknown) => typeof k === 'string' && k.includes('UPSTASH')));
     
     // Log what we actually got from getRedisConfig
     console.error("[message-in-bottle] getRedisConfig returned:", {
