@@ -229,9 +229,13 @@ export default async function handler(req: Request | any, res?: any): Promise<Re
 
     // Pick up a bottle (GET)
     if (method === "GET") {
+      const getStartTime = Date.now();
       try {
-        // Get total count
+        // Get total count with timeout protection
+        const countStartTime = Date.now();
         const count = await redis.llen(BOTTLES_KEY);
+        const countTime = Date.now() - countStartTime;
+        console.log(`[message-in-bottle] Redis llen completed in ${countTime}ms, count: ${count}`);
 
         if (count === 0) {
           return jsonResponse(
@@ -244,9 +248,12 @@ export default async function handler(req: Request | any, res?: any): Promise<Re
           );
         }
 
-        // Get random bottle
+        // Get random bottle with timeout protection
         const randomIndex = Math.floor(Math.random() * count);
+        const lindexStartTime = Date.now();
         const bottleData = await redis.lindex(BOTTLES_KEY, randomIndex);
+        const lindexTime = Date.now() - lindexStartTime;
+        console.log(`[message-in-bottle] Redis lindex completed in ${lindexTime}ms, index: ${randomIndex}`);
 
         if (!bottleData) {
           console.error(`[message-in-bottle] Failed to retrieve bottle at index ${randomIndex}`);
@@ -310,9 +317,11 @@ export default async function handler(req: Request | any, res?: any): Promise<Re
           );
         }
 
-        console.log(`[message-in-bottle] Bottle picked up: ${bottle.id}`);
+        const totalGetTime = Date.now() - getStartTime;
+        console.log(`[message-in-bottle] Bottle picked up: ${bottle.id}, total time: ${totalGetTime}ms`);
 
-        return jsonResponse(
+        // Return response immediately
+        const response = jsonResponse(
           {
             success: true,
             bottle: {
@@ -324,6 +333,9 @@ export default async function handler(req: Request | any, res?: any): Promise<Re
           200,
           effectiveOrigin
         );
+        
+        console.log(`[message-in-bottle] Response created, returning...`);
+        return response;
       } catch (redisError) {
         console.error("[message-in-bottle] Redis error when picking bottle:", redisError);
         return jsonResponse(
