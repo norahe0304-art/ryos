@@ -200,10 +200,28 @@ export function ChatRoomAppComponent({
         });
 
         if (!response.ok) {
-          throw new Error("Failed to get response");
+          // Try to get error details from response
+          let errorText = "Failed to get response";
+          try {
+            const errorData = await response.json();
+            errorText = errorData.message || errorData.error || errorText;
+          } catch {
+            errorText = `HTTP error! status: ${response.status}`;
+          }
+          throw new Error(errorText);
         }
 
         const data = await response.json();
+        
+        // Check if response contains an error
+        if (data.error) {
+          throw new Error(data.message || data.error);
+        }
+        
+        if (!data.reply) {
+          throw new Error("Invalid response format");
+        }
+
         const aiMessage: Message = {
           id: `ai-${Date.now()}`,
           role: "assistant",
@@ -214,10 +232,13 @@ export function ChatRoomAppComponent({
         setMessages((prev) => [...prev, aiMessage]);
       } catch (error) {
         console.error("Error sending message:", error);
+        const errorContent = error instanceof Error 
+          ? error.message 
+          : "oops, something went wrong. try again?";
         const errorMessage: Message = {
           id: `error-${Date.now()}`,
           role: "assistant",
-          content: "oops, something went wrong. try again?",
+          content: errorContent,
           timestamp: Date.now(),
         };
         setMessages((prev) => [...prev, errorMessage]);

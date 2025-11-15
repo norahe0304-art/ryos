@@ -28,13 +28,20 @@ export function useLibraryUpdateChecker(isActive: boolean) {
 
         // Get server tracks directly (same as syncLibrary does)
         // Add cache-busting query parameter to ensure we get the latest version
-        const cacheBuster = `?v=${Date.now()}`;
+        const timestamp = Date.now();
+        const cacheBuster = `?v=${timestamp}&_cb=${timestamp}`;
         const res = await fetch(`/data/ipod-videos.json${cacheBuster}`, {
           cache: 'no-store', // Ensure no caching
           headers: {
-            'Cache-Control': 'no-cache',
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0',
           },
         });
+        
+        if (!res.ok) {
+          throw new Error(`Failed to fetch tracks: ${res.status} ${res.statusText}`);
+        }
         const data = await res.json();
         const serverTracks: Track[] = (data.videos || data).map(
           (v: Record<string, unknown>) => ({
@@ -126,10 +133,45 @@ export function useLibraryUpdateChecker(isActive: boolean) {
     };
 
     // Always check immediately when app becomes active (with a small delay to allow store to rehydrate)
-    const immediateCheckTimeout = setTimeout(() => {
+    // Also check version mismatch and force sync if needed
+    const immediateCheckTimeout = setTimeout(async () => {
       console.log(
         "[iPod] Running immediate library update check on app activation"
       );
+      
+      // First, check version mismatch and force sync if needed
+      try {
+        const currentState = useIpodStore.getState();
+        const timestamp = Date.now();
+        const cacheBuster = `?v=${timestamp}&_cb=${timestamp}`;
+        const versionCheckRes = await fetch(`/data/ipod-videos.json${cacheBuster}`, {
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0',
+          },
+        });
+        
+        if (versionCheckRes.ok) {
+          const versionData = await versionCheckRes.json();
+          const serverVersion = versionData.version || 1;
+          
+          // If server version is newer, force sync immediately
+          if (serverVersion > currentState.lastKnownVersion) {
+            console.log(
+              `[iPod] Version mismatch detected: server=${serverVersion}, local=${currentState.lastKnownVersion}. Forcing sync...`
+            );
+            await syncLibrary();
+            lastCheckedRef.current = Date.now();
+            return; // Skip the regular check since we already synced
+          }
+        }
+      } catch (error) {
+        console.error("[iPod] Error checking version on activation:", error);
+      }
+      
+      // Run regular update check
       checkForUpdates();
       lastCheckedRef.current = Date.now();
     }, 100);

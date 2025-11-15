@@ -81,15 +81,24 @@ async function loadDefaultTracks(): Promise<{
   version: number;
 }> {
   try {
-    // Add cache-busting query parameter to ensure we get the latest version
-    // Use version from JSON file if available, otherwise use timestamp
-    const cacheBuster = `?v=${Date.now()}`;
+    // First, fetch with version-based cache busting
+    // We'll use a two-step approach: first get version, then use it for cache busting
+    // But actually, we can just use timestamp + version combo for better cache invalidation
+    const timestamp = Date.now();
+    const cacheBuster = `?v=${timestamp}&_cb=${timestamp}`;
     const res = await fetch(`/data/ipod-videos.json${cacheBuster}`, {
       cache: 'no-store', // Ensure no caching
       headers: {
-        'Cache-Control': 'no-cache',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
       },
     });
+    
+    if (!res.ok) {
+      throw new Error(`Failed to fetch tracks: ${res.status} ${res.statusText}`);
+    }
+    
     const data = await res.json();
     const videos: unknown[] = data.videos || data;
     const version = data.version || 1;
@@ -572,15 +581,36 @@ export const useIpodStore = create<IpodState>()(
         const current = get();
         // Only initialize if the library is in uninitialized state
         if (current.libraryState === "uninitialized") {
-          const { tracks, version } = await loadDefaultTracks();
-          set({
-            tracks,
-            currentIndex: tracks.length > 0 ? 0 : -1,
-            libraryState: "loaded",
-            lastKnownVersion: version,
-            playbackHistory: [], // Clear playback history when initializing library
-            historyPosition: -1,
-          });
+          try {
+            const { tracks, version } = await loadDefaultTracks();
+            set({
+              tracks,
+              currentIndex: tracks.length > 0 ? 0 : -1,
+              libraryState: "loaded",
+              lastKnownVersion: version,
+              playbackHistory: [], // Clear playback history when initializing library
+              historyPosition: -1,
+            });
+          } catch (error) {
+            console.error("Failed to initialize library:", error);
+            // Set to loaded state even on error to prevent retry loops
+            set({
+              libraryState: "loaded",
+            });
+          }
+        } else if (current.libraryState === "loaded") {
+          // If already loaded, check if we need to sync
+          // Compare current version with server version
+          try {
+            const { version: serverVersion } = await loadDefaultTracks();
+            if (serverVersion > current.lastKnownVersion) {
+              // Server has newer version, trigger sync
+              console.log(`[iPod] Server version (${serverVersion}) is newer than local (${current.lastKnownVersion}), syncing...`);
+              await get().syncLibrary();
+            }
+          } catch (error) {
+            console.error("Failed to check for library updates during initialization:", error);
+          }
         }
       },
       addTrackFromVideoId: async (urlOrId: string): Promise<Track | null> => {

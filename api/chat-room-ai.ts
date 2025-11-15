@@ -46,6 +46,24 @@ export default async function handler(req: Request): Promise<Response> {
     return jsonResponse({ error: "Method not allowed" }, 405, effectiveOrigin);
   }
 
+  // Check if API key is configured
+  const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+  if (!apiKey || apiKey.trim().length === 0) {
+    console.error("[chat-room-ai] GOOGLE_GENERATIVE_AI_API_KEY is not configured");
+    console.error("[chat-room-ai] Available env vars:", Object.keys(process.env).filter(k => k.includes('GOOGLE')));
+    return jsonResponse(
+      { 
+        error: "API key not configured",
+        message: "GOOGLE_GENERATIVE_AI_API_KEY environment variable is missing or empty. Please configure it in your Vercel project settings."
+      },
+      500,
+      effectiveOrigin
+    );
+  }
+  
+  // Log API key status (first 10 chars only for security)
+  console.log(`[chat-room-ai] API key found: ${apiKey.substring(0, 10)}... (length: ${apiKey.length})`);
+
   try {
     const { messages, username } = await req.json();
 
@@ -104,8 +122,13 @@ you write in lowercase except proper nouns. keep responses concise (1-3 sentence
     ];
 
     // Use Gemini 2.5 Flash (works globally, not blocked in China)
+    // Create provider with explicit API key
+    const googleProvider = google({
+      apiKey: apiKey,
+    });
+    
     const { text } = await generateText({
-      model: google("gemini-2.5-flash"),
+      model: googleProvider("gemini-2.5-flash"),
       messages: modelMessages,
       temperature: 0.8, // Higher temperature for more personality
       maxOutputTokens: 500, // Keep responses concise
@@ -114,8 +137,26 @@ you write in lowercase except proper nouns. keep responses concise (1-3 sentence
     return jsonResponse({ reply: text.trim() }, 200, effectiveOrigin);
   } catch (error) {
     console.error("[chat-room-ai] Error:", error);
+    
+    // Provide more specific error messages
+    let errorMessage = "Failed to generate response";
+    if (error instanceof Error) {
+      // Check for common API key errors
+      if (error.message.includes("API key") || error.message.includes("authentication")) {
+        errorMessage = "Invalid or missing API key. Please check your GOOGLE_GENERATIVE_AI_API_KEY configuration.";
+      } else if (error.message.includes("quota") || error.message.includes("limit")) {
+        errorMessage = "API quota exceeded. Please check your Google Cloud billing.";
+      } else {
+        errorMessage = `Error: ${error.message}`;
+      }
+    }
+    
     return jsonResponse(
-      { error: "Failed to generate response" },
+      { 
+        error: "Failed to generate response",
+        message: errorMessage,
+        details: process.env.NODE_ENV === "development" ? String(error) : undefined
+      },
       500,
       effectiveOrigin
     );
