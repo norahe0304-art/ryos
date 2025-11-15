@@ -186,10 +186,16 @@ export default async function handler(req: Request | any, res?: any): Promise<Re
       };
 
       try {
-        // Optimize: Only trim if list is getting large, don't wait for it
-        // Push first, then trim asynchronously to reduce response time
+        // Optimize: Push with timeout protection to ensure fast response (5 seconds max)
         const bottleJson = JSON.stringify(bottle);
-        await redis.lpush(BOTTLES_KEY, bottleJson);
+        
+        // Add timeout wrapper to ensure operation completes within 5 seconds
+        const pushPromise = redis.lpush(BOTTLES_KEY, bottleJson);
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error("Redis operation timeout after 5 seconds")), 5000)
+        );
+        
+        await Promise.race([pushPromise, timeoutPromise]);
         
         // Trim asynchronously without waiting (fire and forget for better performance)
         redis.ltrim(BOTTLES_KEY, 0, MAX_BOTTLES - 1).catch(err => {
