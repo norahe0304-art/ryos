@@ -167,7 +167,7 @@ export function MessageInBottleAppComponent({
   return (
     <>
       <WindowFrame
-        title="TextBottle"
+        title="DriftBottle"
         onClose={onClose}
         isForeground={isForeground}
         appId="message-in-bottle"
@@ -179,9 +179,9 @@ export function MessageInBottleAppComponent({
         {/* Ocean Header */}
         <div className="px-6 py-4 border-b border-blue-200" style={{ backgroundColor: '#dbeafe' }}>
           <div className="flex items-center gap-2">
-            <Waves className="w-5 h-5" style={{ color: '#2563eb' }} />
+            <span className="text-2xl">🫙</span>
             <h2 className="text-lg font-semibold" style={{ color: '#1e3a8a' }}>
-              TextBottle
+              DriftBottle
             </h2>
           </div>
           <p className="text-sm mt-1" style={{ color: '#1e40af' }}>
@@ -289,7 +289,7 @@ export function MessageInBottleAppComponent({
         isOpen={isHelpOpen}
         onOpenChange={setIsHelpOpen}
         helpItems={helpItems}
-        appName="TextBottle"
+        appName="DriftBottle"
       />
       <AboutDialog
         isOpen={isAboutOpen}

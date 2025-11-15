@@ -68,11 +68,17 @@ export default async function handler(req: Request): Promise<Response> {
     console.error("[message-in-bottle] REDIS_KV_REST_API_URL:", redisUrl ? "exists" : "missing");
     console.error("[message-in-bottle] REDIS_KV_REST_API_TOKEN:", redisToken ? "exists" : "missing");
     console.error("[message-in-bottle] Available env vars with REDIS:", Object.keys(process.env).filter(k => k.includes('REDIS')));
-    console.error("[message-in-bottle] Make sure you're using 'vercel dev' (not 'vite dev') and that .env file is in the project root");
+    
+    // Different messages for development vs production
+    const isDevelopment = process.env.NODE_ENV === "development" || process.env.VERCEL_ENV === "development";
+    const errorMessage = isDevelopment
+      ? "Redis is not configured. Please ensure:\n1. You're using 'vercel dev' (not 'vite dev')\n2. .env file exists in project root\n3. REDIS_KV_REST_API_URL and REDIS_KV_REST_API_TOKEN are set in .env"
+      : "Redis is not configured. Please add REDIS_KV_REST_API_URL and REDIS_KV_REST_API_TOKEN in Vercel Dashboard → Settings → Environment Variables";
+    
     return jsonResponse(
       {
         error: "Server configuration error",
-        message: "Redis is not configured. Please ensure:\n1. You're using 'vercel dev' (not 'vite dev')\n2. .env file exists in project root\n3. REDIS_KV_REST_API_URL and REDIS_KV_REST_API_TOKEN are set in .env",
+        message: errorMessage,
       },
       500,
       effectiveOrigin

@@ -62,14 +62,14 @@ export function MessageInBottleMenuBar({
             onClick={onShowHelp}
             className="text-md h-6 px-3 active:bg-gray-900 active:text-white"
           >
-            TextBottle Help
+            DriftBottle Help
           </DropdownMenuItem>
           <DropdownMenuSeparator className="h-[2px] bg-black my-1" />
           <DropdownMenuItem
             onClick={onShowAbout}
             className="text-md h-6 px-3 active:bg-gray-900 active:text-white"
           >
-            About TextBottle
+            About DriftBottle
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

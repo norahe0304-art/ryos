@@ -3,7 +3,7 @@ import { MessageInBottleAppComponent } from "./components/MessageInBottleAppComp
 
 export const helpItems = [
   {
-    icon: "🌊",
+    icon: "🫙",
     title: "Throw a Bottle",
     description: "Write your message and throw it into the sea. It will be shared with everyone.",
   },
@@ -25,7 +25,7 @@ export const helpItems = [
 ];
 
 export const appMetadata = {
-  name: "TextBottle",
+  name: "DriftBottle",
   version: "1.0",
   creator: {
     name: "Ryo Lu",
@@ -37,7 +37,7 @@ export const appMetadata = {
 
 export const MessageInBottleApp: BaseApp = {
   id: "message-in-bottle",
-  name: "TextBottle",
+  name: "DriftBottle",
   icon: { type: "image", src: appMetadata.icon },
   description: "Throw messages into the sea and pick up bottles from others",
   component: MessageInBottleAppComponent,
