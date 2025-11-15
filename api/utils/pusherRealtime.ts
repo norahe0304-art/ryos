@@ -122,6 +122,11 @@ export async function sendMultiplePusherRealtimeEvents<T = unknown>(
   }>
 ): Promise<void> {
   const pusher = getPusherInstance();
+  if (!pusher) {
+    console.warn("[Pusher Realtime] Pusher 未配置，跳过批量事件发送");
+    return;
+  }
+  
   const promises = events.map(({ channel, event, data }) =>
     pusher.trigger(channel, event, data).catch((error) => {
       console.error(
