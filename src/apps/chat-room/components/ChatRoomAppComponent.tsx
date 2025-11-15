@@ -18,6 +18,87 @@ interface Message {
   timestamp: number;
 }
 
+// Helper function to parse message content and extract images
+const parseMessageContent = (
+  content: string
+): Array<{ type: "text" | "image"; content: string; alt?: string }> => {
+  const parts: Array<{ type: "text" | "image"; content: string; alt?: string }> = [];
+  const imageExtensions = /\.(jpg|jpeg|png|gif|webp|svg)(\?.*)?$/i;
+  
+  // Match markdown images: ![alt](url)
+  const markdownImageRegex = /!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/g;
+  let lastIndex = 0;
+  let match;
+
+  while ((match = markdownImageRegex.exec(content)) !== null) {
+    // Add text before the image
+    if (match.index > lastIndex) {
+      const textBefore = content.slice(lastIndex, match.index);
+      if (textBefore.trim()) {
+        parts.push({ type: "text", content: textBefore });
+      }
+    }
+    
+    // Add the image
+    parts.push({
+      type: "image",
+      content: match[2], // URL
+      alt: match[1] || "", // Alt text
+    });
+    
+    lastIndex = markdownImageRegex.lastIndex;
+  }
+
+  // Add remaining text
+  if (lastIndex < content.length) {
+    const remainingText = content.slice(lastIndex);
+    
+    // Check for plain image URLs in remaining text
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    let urlMatch;
+    let textLastIndex = 0;
+    
+    while ((urlMatch = urlRegex.exec(remainingText)) !== null) {
+      // Check if URL is an image
+      if (imageExtensions.test(urlMatch[1])) {
+        // Add text before the URL
+        if (urlMatch.index > textLastIndex) {
+          const textBefore = remainingText.slice(textLastIndex, urlMatch.index);
+          if (textBefore.trim()) {
+            parts.push({ type: "text", content: textBefore });
+          }
+        }
+        
+        // Add the image
+        parts.push({
+          type: "image",
+          content: urlMatch[1],
+        });
+        
+        textLastIndex = urlRegex.lastIndex;
+      }
+    }
+    
+    // Add remaining text after URLs
+    if (textLastIndex < remainingText.length) {
+      const finalText = remainingText.slice(textLastIndex);
+      if (finalText.trim()) {
+        parts.push({ type: "text", content: finalText });
+      }
+    } else if (textLastIndex === 0 && remainingText.trim()) {
+      // No URLs found, add all remaining text
+      parts.push({ type: "text", content: remainingText });
+    }
+  }
+
+  // If no parts were added, return the original content as text
+  if (parts.length === 0) {
+    parts.push({ type: "text", content });
+  }
+
+  return parts;
+};
+
 export function ChatRoomAppComponent({
   isWindowOpen,
   onClose,
@@ -243,7 +324,29 @@ export function ChatRoomAppComponent({
                           </div>
                         )}
                         <div className="whitespace-pre-wrap break-words">
-                          {message.content}
+                          {parseMessageContent(message.content).map(
+                            (part, index) => {
+                              if (part.type === "image") {
+                                return (
+                                  <img
+                                    key={index}
+                                    src={part.content}
+                                    alt={part.alt || "Image"}
+                                    className="max-w-full h-auto rounded mt-2 mb-2 block"
+                                    style={{ maxHeight: "300px", objectFit: "contain" }}
+                                    loading="lazy"
+                                    crossOrigin="anonymous"
+                                    onError={(e) => {
+                                      // Hide broken images
+                                      (e.target as HTMLImageElement).style.display =
+                                        "none";
+                                    }}
+                                  />
+                                );
+                              }
+                              return <span key={index}>{part.content}</span>;
+                            }
+                          )}
                         </div>
                       </div>
                     </div>

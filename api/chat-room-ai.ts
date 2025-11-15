@@ -8,6 +8,9 @@ const getEffectiveOrigin = (req: Request): string | null => {
     "http://localhost:5173",
     "http://localhost:4173",
     "https://os.ryo.lu",
+    "https://os.nora-he.com",
+    "https://nora-he.com",
+    "https://www.nora-he.com",
     "https://ryos.vercel.app",
   ];
   if (origin && allowedOrigins.includes(origin)) {

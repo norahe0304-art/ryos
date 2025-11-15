@@ -339,9 +339,23 @@ export function IpodWheel({
         }}
       >
         <img
-          src="/assets/按钮贴图.png"
-          alt=""
-          className="w-full h-full object-cover"
+          src="/assets/hello-kitty-sticker.png"
+          alt="Hello Kitty Sticker"
+          className="w-full h-full object-contain pointer-events-none"
+          loading="eager"
+          decoding="async"
+          style={{ zIndex: 1 }}
+          onLoad={() => {
+            console.log("Hello Kitty sticker loaded successfully");
+          }}
+          onError={(e) => {
+            console.error("Failed to load button sticker:", e);
+            console.error("Attempted URL:", "/assets/hello-kitty-sticker.png");
+            // Don't hide, show error state instead
+            const img = e.target as HTMLImageElement;
+            img.style.border = "2px solid red";
+            img.alt = "Failed to load sticker";
+          }}
         />
       </div>
 

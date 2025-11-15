@@ -3,6 +3,38 @@ import { persist } from "zustand/middleware";
 import { LyricsAlignment, ChineseVariant, KoreanDisplay } from "@/types/lyrics";
 import { LyricLine } from "@/types/lyrics";
 
+// Helper function to fetch song info using Chrome MCP tools
+// This function calls an API endpoint that uses Chrome MCP tools server-side
+async function fetchSongInfoWithChromeMCP(url: string): Promise<{ title?: string; artist?: string } | null> {
+  try {
+    // Call API endpoint that uses Chrome MCP tools
+    // The endpoint will handle the Chrome MCP integration server-side
+    const response = await fetch("/api/fetch-song-info-chrome", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url }),
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      // If the endpoint returns an error about Chrome MCP not being available,
+      // return null to fall back to oEmbed
+      if (data.error) {
+        return null;
+      }
+      return {
+        title: data.title,
+        artist: data.artist,
+      };
+    }
+    
+    return null;
+  } catch (error) {
+    console.error("Error in fetchSongInfoWithChromeMCP:", error);
+    return null;
+  }
+}
+
 // Define the Track type (can be shared or defined here)
 export interface Track {
   id: string;
@@ -599,6 +631,20 @@ export const useIpodStore = create<IpodState>()(
         let rawTitle = `Video ID: ${videoId}`; // Default title
         let authorName: string | undefined = undefined; // Store author_name
 
+        // Try to use Chrome MCP to fetch page info first
+        let useChromeMCP = false;
+        try {
+          // Check if Chrome MCP is available (via window or global)
+          // Chrome MCP tools are typically available through MCP server
+          // For now, we'll try to use the oEmbed API and then enhance with Chrome MCP if available
+          
+          // Attempt to fetch page snapshot using Chrome MCP if available
+          // This would require the Chrome MCP server to be running and accessible
+          // For now, we'll use oEmbed as the primary method
+        } catch (error) {
+          console.warn("Chrome MCP not available, falling back to oEmbed:", error);
+        }
+
         try {
           // Fetch oEmbed data
           const oembedUrl = `https://www.youtube.com/oembed?url=${encodeURIComponent(
@@ -620,31 +666,56 @@ export const useIpodStore = create<IpodState>()(
           throw error; // Re-throw to be handled by caller
         }
 
+        // Try to enhance with Chrome MCP if available
+        // Use Chrome MCP tools directly from client if available
+        let enhancedTitle = rawTitle;
+        let enhancedArtist = authorName;
+        
+        try {
+          // Check if we're in an environment where Chrome MCP tools are available
+          // Chrome MCP tools would be available through the MCP server connection
+          // For now, we'll try to use them if available via a helper function
+          
+          // Attempt to use Chrome MCP to get page snapshot and extract info
+          const chromeMCPData = await fetchSongInfoWithChromeMCP(youtubeUrl);
+          if (chromeMCPData) {
+            if (chromeMCPData.title) {
+              enhancedTitle = chromeMCPData.title;
+            }
+            if (chromeMCPData.artist) {
+              enhancedArtist = chromeMCPData.artist;
+            }
+          }
+        } catch (error) {
+          console.warn("Chrome MCP fetch failed, using oEmbed data:", error);
+          // Continue with oEmbed data
+        }
+
         const trackInfo = {
-          title: rawTitle,
+          title: enhancedTitle,
           artist: undefined as string | undefined,
           album: undefined as string | undefined,
         };
 
         try {
-          // Call /api/parse-title
+          // Call /api/parse-title with the enhanced data
           const parseResponse = await fetch("/api/parse-title", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              title: rawTitle,
-              author_name: authorName,
+              title: enhancedTitle,
+              author_name: enhancedArtist,
             }),
           });
 
           if (parseResponse.ok) {
             const parsedData = await parseResponse.json();
-            trackInfo.title = parsedData.title || rawTitle;
+            trackInfo.title = parsedData.title || enhancedTitle;
             trackInfo.artist = parsedData.artist;
             trackInfo.album = parsedData.album;
           } else {
             console.warn(
-              `Failed to parse title with AI (status: ${parseResponse.status}), using raw title from oEmbed/default.`
+              `Failed to parse title with AI (status: ${parseResponse.status}), using enhanced title from Chrome MCP/oEmbed.`
             );
           }
         } catch (error) {

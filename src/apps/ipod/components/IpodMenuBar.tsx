@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { generateAppShareUrl } from "@/utils/sharedUrl";
 import { LyricsAlignment, ChineseVariant, KoreanDisplay } from "@/types/lyrics";
 import { useThemeStore } from "@/stores/useThemeStore";
+import { addSongsFromChatHistory } from "@/utils/addSongsFromChat";
 
 interface IpodMenuBarProps {
   onClose: () => void;
@@ -199,6 +200,25 @@ export function IpodMenuBar({
     input.click();
   };
 
+  const handleAddSongsFromChat = async () => {
+    try {
+      toast.info("正在从聊天记录中提取歌曲...");
+      const addedTracks = await addSongsFromChatHistory();
+      
+      if (addedTracks.length === 0) {
+        toast.info("未在聊天记录中找到新的 YouTube 链接");
+        return;
+      }
+      
+      toast.success(`成功添加 ${addedTracks.length} 首歌曲到 iPod`, {
+        description: addedTracks.slice(0, 3).map(t => t.title).join(", ") + (addedTracks.length > 3 ? "..." : ""),
+      });
+    } catch (error) {
+      console.error("Failed to add songs from chat:", error);
+      toast.error("从聊天记录添加歌曲失败");
+    }
+  };
+
   return (
     <MenuBar inWindowFrame={isXpTheme}>
       {/* File Menu */}
@@ -218,6 +238,12 @@ export function IpodMenuBar({
             className="text-md h-6 px-3 active:bg-gray-900 active:text-white"
           >
             Add Song...
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={handleAddSongsFromChat}
+            className="text-md h-6 px-3 active:bg-gray-900 active:text-white"
+          >
+            Add Songs from Chat...
           </DropdownMenuItem>
           <DropdownMenuItem
             onClick={onShareSong}
