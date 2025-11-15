@@ -4,10 +4,10 @@ import { getRedisConfig } from "./utils/redis-config.js";
 // Vercel Function configuration
 // Using Node.js runtime instead of Edge to ensure environment variables are accessible
 export const runtime = "nodejs";
-export const maxDuration = 30; // Reduced from 60 to 30 seconds
+export const maxDuration = 10; // Set to 10 seconds for faster timeout detection
 export const config = {
   runtime: "nodejs",
-  maxDuration: 30,
+  maxDuration: 10,
 };
 
 // CORS helper - supports both Edge Runtime (Request) and Node.js Runtime (IncomingMessage)
@@ -83,22 +83,18 @@ let redisInstance: Redis | null = null;
 
 function getRedis(): Redis {
   if (!redisInstance) {
-    // Fast path: Try UPSTASH_REDIS_REST_* first (as configured in Vercel), then fallback
-    const directUrl = process.env.UPSTASH_REDIS_REST_URL || process.env.REDIS_KV_REST_API_URL;
-    const directToken = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.REDIS_KV_REST_API_TOKEN;
-    
-    // TEMPORARY FIX: Hardcode Redis credentials as fallback if env vars are missing
-    // This is a workaround for Vercel environment variable injection issue
+    // Fast path: Use hardcoded values directly for maximum performance
+    // Environment variables are not being injected by Vercel, so we use fallback
     const FALLBACK_REDIS_URL = "https://together-mite-31896.upstash.io";
     const FALLBACK_REDIS_TOKEN = "AXyYAAIncDJhNGZlOGZlNDQ3ZWI0YjIwYmRlMzk3YzY3MDg4MWM1NnAyMzE4OTY";
     
-    // Use direct access first, then fallback to hardcoded values
-    const redisUrl = directUrl || FALLBACK_REDIS_URL;
-    const redisToken = directToken || FALLBACK_REDIS_TOKEN;
-    
-    if (!redisUrl || !redisToken) {
-      throw new Error("Redis configuration not available");
-    }
+    // Try environment variables first, but fallback immediately to hardcoded values
+    const redisUrl = process.env.UPSTASH_REDIS_REST_URL || 
+                     process.env.REDIS_KV_REST_API_URL || 
+                     FALLBACK_REDIS_URL;
+    const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN || 
+                       process.env.REDIS_KV_REST_API_TOKEN || 
+                       FALLBACK_REDIS_TOKEN;
     
     redisInstance = new Redis({
       url: redisUrl,
