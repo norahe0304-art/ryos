@@ -148,9 +148,19 @@ function getRedis(): Redis {
       token: config.token ? "exists" : "missing",
     });
     
-    // Use direct access if getRedisConfig fails
-    const redisUrl = config.url || directUrl;
-    const redisToken = config.token || directToken;
+    // TEMPORARY FIX: Hardcode Redis credentials as fallback if env vars are missing
+    // This is a workaround for Vercel environment variable injection issue
+    // TODO: Remove this once Vercel fixes the environment variable injection
+    const FALLBACK_REDIS_URL = "https://together-mite-31896.upstash.io";
+    const FALLBACK_REDIS_TOKEN = "AXyYAAIncDJhNGZlOGZlNDQ3ZWI0YjIwYmRlMzk3YzY3MDg4MWM1NnAyMzE4OTY";
+    
+    // Use direct access if getRedisConfig fails, then fallback to hardcoded values
+    let redisUrl = config.url || directUrl || FALLBACK_REDIS_URL;
+    let redisToken = config.token || directToken || FALLBACK_REDIS_TOKEN;
+    
+    if (redisUrl === FALLBACK_REDIS_URL || redisToken === FALLBACK_REDIS_TOKEN) {
+      console.warn("[message-in-bottle] Using fallback hardcoded Redis credentials - this is a temporary workaround");
+    }
     
     if (!redisUrl || !redisToken) {
       console.error("[message-in-bottle] All methods failed to get Redis config");
