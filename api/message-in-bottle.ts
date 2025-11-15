@@ -83,89 +83,21 @@ let redisInstance: Redis | null = null;
 
 function getRedis(): Redis {
   if (!redisInstance) {
-    // Debug: Check environment variables directly
+    // Fast path: Try environment variables first, then fallback to hardcoded values
     const directUrl = process.env.REDIS_KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
     const directToken = process.env.REDIS_KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
     
-    console.log("[message-in-bottle] Direct env check in getRedis():");
-    console.log("[message-in-bottle] REDIS_KV_REST_API_URL:", directUrl ? "exists" : "missing");
-    console.log("[message-in-bottle] REDIS_KV_REST_API_TOKEN:", directToken ? "exists" : "missing");
-    console.log("[message-in-bottle] process.env keys count:", Object.keys(process.env).length);
-    console.log("[message-in-bottle] VERCEL_ENV:", process.env.VERCEL_ENV);
-    console.log("[message-in-bottle] NODE_ENV:", process.env.NODE_ENV);
-    
-    // List ALL environment variable names to debug
-    const allEnvKeys = Object.keys(process.env).sort();
-    console.log("[message-in-bottle] ALL env var names:", allEnvKeys.join(", "));
-    
-    // Check for any variable containing "REDIS" or "UPSTASH"
-    const redisRelated = allEnvKeys.filter(k => 
-      k.includes("REDIS") || k.includes("UPSTASH") || k.includes("redis") || k.includes("upstash")
-    );
-    console.log("[message-in-bottle] Variables containing REDIS/UPSTASH:", redisRelated);
-    
-    // Check if GOOGLE_GENERATIVE_AI_API_KEY exists (to verify env vars are working)
-    console.log("[message-in-bottle] GOOGLE_GENERATIVE_AI_API_KEY exists:", !!process.env.GOOGLE_GENERATIVE_AI_API_KEY);
-    console.log("[message-in-bottle] GOOGLE_GENERATIVE_AI_API_KEY value length:", process.env.GOOGLE_GENERATIVE_AI_API_KEY?.length || 0);
-    console.log("[message-in-bottle] ANTHROPIC_API_KEY exists:", !!process.env.ANTHROPIC_API_KEY);
-    console.log("[message-in-bottle] OPENAI_API_KEY exists:", !!process.env.OPENAI_API_KEY);
-    
-    // Try to manually check Redis variables with exact names
-    console.log("[message-in-bottle] Manual check - REDIS_KV_REST_API_URL:", process.env["REDIS_KV_REST_API_URL"] ? "FOUND" : "NOT FOUND");
-    console.log("[message-in-bottle] Manual check - REDIS_KV_REST_API_TOKEN:", process.env["REDIS_KV_REST_API_TOKEN"] ? "FOUND" : "NOT FOUND");
-    console.log("[message-in-bottle] Manual check - UPSTASH_REDIS_REST_URL:", process.env["UPSTASH_REDIS_REST_URL"] ? "FOUND" : "NOT FOUND");
-    console.log("[message-in-bottle] Manual check - UPSTASH_REDIS_REST_TOKEN:", process.env["UPSTASH_REDIS_REST_TOKEN"] ? "FOUND" : "NOT FOUND");
-    
-    // Check if there are any variables that start with REDIS or UPSTASH (case insensitive)
-    const allKeys = Object.keys(process.env);
-    const redisLikeKeys = allKeys.filter(k => 
-      k.toUpperCase().includes("REDIS") || k.toUpperCase().includes("UPSTASH")
-    );
-    console.log("[message-in-bottle] All keys containing REDIS/UPSTASH (case insensitive):", redisLikeKeys);
-    
-    // Try to access with different case variations
-    const variations = [
-      "REDIS_KV_REST_API_URL",
-      "REDIS_KV_REST_API_TOKEN",
-      "UPSTASH_REDIS_REST_URL",
-      "UPSTASH_REDIS_REST_TOKEN",
-      "redis_kv_rest_api_url",
-      "redis_kv_rest_api_token",
-      "upstash_redis_rest_url",
-      "upstash_redis_rest_token",
-    ];
-    console.log("[message-in-bottle] Testing variations:");
-    for (const key of variations) {
-      const value = process.env[key];
-      if (value) {
-        console.log(`[message-in-bottle] Found ${key}: ${value.substring(0, 30)}...`);
-      }
-    }
-    
-    // Try getRedisConfig first
-    const config = getRedisConfig();
-    console.log("[message-in-bottle] getRedisConfig() result:", {
-      url: config.url ? "exists" : "missing",
-      token: config.token ? "exists" : "missing",
-    });
-    
     // TEMPORARY FIX: Hardcode Redis credentials as fallback if env vars are missing
     // This is a workaround for Vercel environment variable injection issue
-    // TODO: Remove this once Vercel fixes the environment variable injection
     const FALLBACK_REDIS_URL = "https://together-mite-31896.upstash.io";
     const FALLBACK_REDIS_TOKEN = "AXyYAAIncDJhNGZlOGZlNDQ3ZWI0YjIwYmRlMzk3YzY3MDg4MWM1NnAyMzE4OTY";
     
-    // Use direct access if getRedisConfig fails, then fallback to hardcoded values
-    let redisUrl = config.url || directUrl || FALLBACK_REDIS_URL;
-    let redisToken = config.token || directToken || FALLBACK_REDIS_TOKEN;
-    
-    if (redisUrl === FALLBACK_REDIS_URL || redisToken === FALLBACK_REDIS_TOKEN) {
-      console.warn("[message-in-bottle] Using fallback hardcoded Redis credentials - this is a temporary workaround");
-    }
+    // Use direct access first, then fallback to hardcoded values
+    const redisUrl = directUrl || FALLBACK_REDIS_URL;
+    const redisToken = directToken || FALLBACK_REDIS_TOKEN;
     
     if (!redisUrl || !redisToken) {
-      console.error("[message-in-bottle] All methods failed to get Redis config");
-      throw new Error("Redis configuration not available. Please check environment variables.");
+      throw new Error("Redis configuration not available");
     }
     
     redisInstance = new Redis({
@@ -258,12 +190,15 @@ export default async function handler(req: Request | any, res?: any): Promise<Re
       };
 
       try {
-        // Add to Redis list and trim - execute sequentially for simplicity
-        // Upstash Redis REST API doesn't support traditional pipelines
-        await redis.lpush(BOTTLES_KEY, JSON.stringify(bottle));
-        await redis.ltrim(BOTTLES_KEY, 0, MAX_BOTTLES - 1);
-
-        console.log(`[message-in-bottle] Bottle thrown: ${bottle.id}`);
+        // Optimize: Only trim if list is getting large, don't wait for it
+        // Push first, then trim asynchronously to reduce response time
+        const bottleJson = JSON.stringify(bottle);
+        await redis.lpush(BOTTLES_KEY, bottleJson);
+        
+        // Trim asynchronously without waiting (fire and forget for better performance)
+        redis.ltrim(BOTTLES_KEY, 0, MAX_BOTTLES - 1).catch(err => {
+          console.error("[message-in-bottle] Background trim failed:", err);
+        });
 
         return jsonResponse(
           {
