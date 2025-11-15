@@ -68,6 +68,35 @@ function getRedis(): Redis {
     console.log("[message-in-bottle] REDIS_KV_REST_API_TOKEN:", directToken ? "exists" : "missing");
     console.log("[message-in-bottle] process.env keys count:", Object.keys(process.env).length);
     
+    // List ALL environment variable names to debug
+    const allEnvKeys = Object.keys(process.env).sort();
+    console.log("[message-in-bottle] ALL env var names:", allEnvKeys.join(", "));
+    
+    // Check for any variable containing "REDIS" or "UPSTASH"
+    const redisRelated = allEnvKeys.filter(k => 
+      k.includes("REDIS") || k.includes("UPSTASH") || k.includes("redis") || k.includes("upstash")
+    );
+    console.log("[message-in-bottle] Variables containing REDIS/UPSTASH:", redisRelated);
+    
+    // Try to access with different case variations
+    const variations = [
+      "REDIS_KV_REST_API_URL",
+      "REDIS_KV_REST_API_TOKEN",
+      "UPSTASH_REDIS_REST_URL",
+      "UPSTASH_REDIS_REST_TOKEN",
+      "redis_kv_rest_api_url",
+      "redis_kv_rest_api_token",
+      "upstash_redis_rest_url",
+      "upstash_redis_rest_token",
+    ];
+    console.log("[message-in-bottle] Testing variations:");
+    for (const key of variations) {
+      const value = process.env[key];
+      if (value) {
+        console.log(`[message-in-bottle] Found ${key}: ${value.substring(0, 30)}...`);
+      }
+    }
+    
     // Try getRedisConfig first
     const config = getRedisConfig();
     console.log("[message-in-bottle] getRedisConfig() result:", {
