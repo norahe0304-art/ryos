@@ -1,12 +1,12 @@
 import { Redis } from "@upstash/redis";
 import { getRedisConfig } from "./utils/redis-config.js";
 
-// Vercel Edge Function configuration
-export const runtime = "edge";
-export const edge = true;
+// Vercel Function configuration
+// Using Node.js runtime instead of Edge to ensure environment variables are accessible
+export const runtime = "nodejs";
 export const maxDuration = 60;
 export const config = {
-  runtime: "edge",
+  runtime: "nodejs",
 };
 
 // CORS helper
