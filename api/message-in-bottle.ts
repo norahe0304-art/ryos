@@ -146,7 +146,7 @@ function getRedis(): Redis {
 
 export default async function handler(req: Request | any, res?: any): Promise<Response> {
   // Handle both Edge Runtime (Request) and Node.js Runtime (IncomingMessage)
-  const method = req.method || req.method;
+  const method = req.method || (req as any).method;
   const effectiveOrigin = getEffectiveOrigin(req);
 
   if (method === "OPTIONS") {
@@ -176,7 +176,7 @@ export default async function handler(req: Request | any, res?: any): Promise<Re
 
   try {
     // Throw a bottle (POST)
-    if (req.method === "POST") {
+    if (method === "POST") {
       let body;
       try {
         // Handle both Edge Runtime (Request.json()) and Node.js Runtime (stream)
