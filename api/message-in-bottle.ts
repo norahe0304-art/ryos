@@ -186,13 +186,13 @@ export default async function handler(req: Request | any, res?: any): Promise<Re
       };
 
       try {
-        // Optimize: Push with timeout protection to ensure fast response (5 seconds max)
+        // Optimize: Push with timeout protection (10 seconds max for Redis operation)
         const bottleJson = JSON.stringify(bottle);
         
-        // Add timeout wrapper to ensure operation completes within 5 seconds
+        // Add timeout wrapper to ensure operation completes within 10 seconds
         const pushPromise = redis.lpush(BOTTLES_KEY, bottleJson);
         const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error("Redis operation timeout after 5 seconds")), 5000)
+          setTimeout(() => reject(new Error("Redis operation timeout after 10 seconds")), 10000)
         );
         
         await Promise.race([pushPromise, timeoutPromise]);
