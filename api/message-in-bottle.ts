@@ -83,18 +83,18 @@ let redisInstance: Redis | null = null;
 
 function getRedis(): Redis {
   if (!redisInstance) {
-    // Fast path: Use hardcoded values directly for maximum performance
-    // Environment variables are not being injected by Vercel, so we use fallback
+    // Use getRedisConfig() helper to ensure consistent environment variable handling
+    // This supports both REDIS_KV_REST_API_* and UPSTASH_REDIS_REST_* naming conventions
+    const config = getRedisConfig();
+    
+    // Fallback values if environment variables are not available
     const FALLBACK_REDIS_URL = "https://together-mite-31896.upstash.io";
     const FALLBACK_REDIS_TOKEN = "AXyYAAIncDJhNGZlOGZlNDQ3ZWI0YjIwYmRlMzk3YzY3MDg4MWM1NnAyMzE4OTY";
     
-    // Try environment variables first, but fallback immediately to hardcoded values
-    const redisUrl = process.env.UPSTASH_REDIS_REST_URL || 
-                     process.env.REDIS_KV_REST_API_URL || 
-                     FALLBACK_REDIS_URL;
-    const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN || 
-                       process.env.REDIS_KV_REST_API_TOKEN || 
-                       FALLBACK_REDIS_TOKEN;
+    const redisUrl = config.url || FALLBACK_REDIS_URL;
+    const redisToken = config.token || FALLBACK_REDIS_TOKEN;
+    
+    console.log(`[message-in-bottle] Initializing Redis with URL: ${redisUrl.substring(0, 30)}...`);
     
     redisInstance = new Redis({
       url: redisUrl,
