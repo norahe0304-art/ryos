@@ -63,12 +63,17 @@ export default async function handler(req: Request): Promise<Response> {
   // Check Redis environment variables (supports both naming conventions)
   const { url: redisUrl, token: redisToken } = getRedisConfig();
 
+  // Enhanced debugging
+  console.log("[message-in-bottle] Redis config check:");
+  console.log("[message-in-bottle] redisUrl:", redisUrl ? `${redisUrl.substring(0, 30)}...` : "undefined");
+  console.log("[message-in-bottle] redisToken:", redisToken ? `${redisToken.substring(0, 20)}...` : "undefined");
+  console.log("[message-in-bottle] REDIS_KV_REST_API_URL:", process.env.REDIS_KV_REST_API_URL ? `${process.env.REDIS_KV_REST_API_URL.substring(0, 30)}...` : "missing");
+  console.log("[message-in-bottle] REDIS_KV_REST_API_TOKEN:", process.env.REDIS_KV_REST_API_TOKEN ? "exists" : "missing");
+  console.log("[message-in-bottle] UPSTASH_REDIS_REST_URL:", process.env.UPSTASH_REDIS_REST_URL ? `${process.env.UPSTASH_REDIS_REST_URL.substring(0, 30)}...` : "missing");
+  console.log("[message-in-bottle] UPSTASH_REDIS_REST_TOKEN:", process.env.UPSTASH_REDIS_REST_TOKEN ? "exists" : "missing");
+
   if (!redisUrl || !redisToken) {
     console.error("[message-in-bottle] Redis credentials not configured");
-    console.error("[message-in-bottle] REDIS_KV_REST_API_URL:", process.env.REDIS_KV_REST_API_URL ? "exists" : "missing");
-    console.error("[message-in-bottle] REDIS_KV_REST_API_TOKEN:", process.env.REDIS_KV_REST_API_TOKEN ? "exists" : "missing");
-    console.error("[message-in-bottle] UPSTASH_REDIS_REST_URL:", process.env.UPSTASH_REDIS_REST_URL ? "exists" : "missing");
-    console.error("[message-in-bottle] UPSTASH_REDIS_REST_TOKEN:", process.env.UPSTASH_REDIS_REST_TOKEN ? "exists" : "missing");
     console.error("[message-in-bottle] Available env vars with REDIS:", Object.keys(process.env).filter(k => k.includes('REDIS')));
     console.error("[message-in-bottle] Available env vars with UPSTASH:", Object.keys(process.env).filter(k => k.includes('UPSTASH')));
     
@@ -89,10 +94,12 @@ export default async function handler(req: Request): Promise<Response> {
   }
 
   // Initialize Redis
+  console.log("[message-in-bottle] Initializing Redis client...");
   const redis = new Redis({
     url: redisUrl,
     token: redisToken,
   });
+  console.log("[message-in-bottle] Redis client initialized");
 
   try {
     // Throw a bottle (POST)
