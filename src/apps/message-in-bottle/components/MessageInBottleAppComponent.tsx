@@ -133,13 +133,15 @@ export function MessageInBottleAppComponent({
       }
 
       // Success - message already cleared, show success toast
-      toast.success("Bottle thrown into the sea! 🌊", {
-        description: "Your message is now floating in the ocean.",
+      toast.success("✅ 瓶子已扔入大海！", {
+        description: "你的消息正在海洋中漂流...",
+        duration: 3000, // 显示 3 秒
       });
     } catch (error) {
       console.error("Error throwing bottle:", error);
-      toast.error("Failed to throw bottle", {
-        description: error instanceof Error ? error.message : "Please try again.",
+      toast.error("❌ 扔瓶子失败", {
+        description: error instanceof Error ? error.message : "请重试。",
+        duration: 4000, // 错误信息显示更久
       });
     } finally {
       setIsThrowing(false);
@@ -179,13 +181,15 @@ export function MessageInBottleAppComponent({
         setBottleCount(bottleCount - 1);
       }
       
-      toast.success("Bottle picked up! 🎣", {
-        description: `You found a message from the sea. (${fetchTime}ms)`,
+      toast.success("🎣 捡到瓶子了！", {
+        description: `你从大海中找到了一个消息。(${fetchTime}ms)`,
+        duration: 3000, // 显示 3 秒
       });
     } catch (error) {
       console.error("Error picking bottle:", error);
-      toast.error("Failed to pick bottle", {
-        description: error instanceof Error ? error.message : "Please try again.",
+      toast.error("❌ 捡瓶子失败", {
+        description: error instanceof Error ? error.message : "请重试。",
+        duration: 4000, // 错误信息显示更久
       });
     } finally {
       setIsPicking(false);
