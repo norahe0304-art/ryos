@@ -104,9 +104,9 @@ function getRedis(): Redis {
   return redisInstance;
 }
 
-export default async function handler(req: Request | any, res?: any): Promise<Response> {
-  // Handle both Edge Runtime (Request) and Node.js Runtime (IncomingMessage)
-  const method = req.method || (req as any).method;
+export default async function handler(req: Request): Promise<Response> {
+  // Standard Vercel handler - only accepts Request
+  const method = req.method;
   const effectiveOrigin = getEffectiveOrigin(req);
 
   if (method === "OPTIONS") {
@@ -139,18 +139,8 @@ export default async function handler(req: Request | any, res?: any): Promise<Re
     if (method === "POST") {
       let body;
       try {
-        // Handle both Edge Runtime (Request.json()) and Node.js Runtime (stream)
-        if (typeof req.json === "function") {
-          body = await req.json();
-        } else {
-          // Node.js Runtime - read from stream
-          const chunks: Uint8Array[] = [];
-          for await (const chunk of req) {
-            chunks.push(chunk);
-          }
-          const buffer = Buffer.concat(chunks);
-          body = JSON.parse(buffer.toString());
-        }
+        // Standard Request.json() method
+        body = await req.json();
       } catch (parseError) {
         console.error("[message-in-bottle] Failed to parse request body:", parseError);
         return jsonResponse(
